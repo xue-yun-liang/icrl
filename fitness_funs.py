@@ -78,10 +78,13 @@ def fitness_(in_):
 #     return (max(0,X-BRAM_THRESHOLD))
 def constraint_POWER(X):
     return (max(0, X-POWER_THRESHOLD))
+
 def constraint_AREA(X):
     return (max(0, X-AREA_THRESHOLD))
+
 def constraint_LATENCY(X):
     return (max(0,X-LATENCY_THRESHOLD))
+
 def calc_e1(X):
     """计算第一个约束的惩罚项"""
     e = X[0] + X[1] - 6

@@ -9,6 +9,7 @@ import torch
 import pdb
 
 def status_normalize(status, design_space):
+	# status: , design_space: -> dict
 	status_copy = dict()
 	for item in design_space.dimension_box:
 		name = item.get_name()
@@ -16,12 +17,15 @@ def status_normalize(status, design_space):
 	return status_copy
 
 def action_value_normalize(action_list, design_space):
+	# action_list: list, design_space: -> list
 	action_list_copy = list()
 	for index, item in enumerate(design_space.dimension_box):
 		action_list_copy.append(action_list[index] / len(item.sample_box))
 	return action_list_copy
 
 def compute_action_distance(action_list_a, action_list_b, design_space):
+	# action_list_a: list, action_list_b: list, design_space: -> int
+	# 计算两个action之间的距离
 	action_list_a_normalized = action_value_normalize(action_list_a, design_space)
 	action_list_b_normalized = action_value_normalize(action_list_b, design_space)
 	distance = 0
@@ -30,37 +34,45 @@ def compute_action_distance(action_list_a, action_list_b, design_space):
 	return distance
 
 def action_normalize(action_tensor, design_space, step):
+	# action_tensor: ,design_space: , step  -> tensor
 	action_tensor = action_tensor / (design_space.get_dimension_scale(step)-1)
 
-def status_to_tensor(status):
+def status_to_list(status):
+	"""
+	将status中的value转换成list对象
+	"""
 	_list = []
-	#### step1:get list
 	for index in status:
 		_list.append(status[index])
-	#### step2:get numpy_array
+	return _list
+
+def status_to_tensor(status):
+	"""
+	将status转换成torch.tensor存储的格式.
+
+    Parameters
+    ----------
+    status : 
+        
+
+	Returns
+    -------
+	_tensor : torch.tensor
+		以torch.tensor形式存储的status
+	"""
+	_list = status_to_list(status)
 	_ndarray = numpy.array(_list)
-	#### step3:get tensor
 	_tensor = torch.from_numpy(_ndarray)
 	return _tensor
 
 def status_to_Variable(status):
-	_list = []
-	#### step1:get list
-	for index in status:
-		_list.append(status[index])
-	#### step2:get numpy_array
-	_ndarray = numpy.array(_list)
-	#### step3:get tensor
-	_tensor = torch.from_numpy(_ndarray)
+	"""
+	用来将 status转换从 torch.tensor,然后将_tensor 包装成一个 PyTorch 的变量对象
+	这个变量对象通常用于表示计算图中的节点，允许自动微分
+	"""
+	_tensor = status_to_tensor(status)
 	_Variable = torch.autograd.Variable(_tensor).float()
 	return _Variable	
-
-def status_to_list(status):
-	_list = []
-	#### step1:get list
-	for index in status:
-		_list.append(status[index])
-	return _list
 
 def index_to_one_hot(scale, action_index):
 	_tensor = torch.zeros(scale)
@@ -129,8 +141,11 @@ def get_kldivloss_and_log_prob(policyfunction, design_space, status, action_inde
 
 
 class actor_random():
-        #### make_policy return the index of dimension's sample_box rather than the actual value for convinience
 	def make_policy(self, design_space, dimension_index):
+		'''
+		return the index of dimension's sample_box 
+		rather than the actual value for convinience
+		'''
 		return random.randint(0,design_space.dimension_box[dimension_index].get_scale()-1)
 
 class actor_e_greedy():

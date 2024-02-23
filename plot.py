@@ -3,8 +3,8 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-#from mpl_toolkits.mplot3d import Axes3D
 import fitness_funs as fit
+
 class Plot_pareto:
     def __init__(self):
         #绘制测试函数的曲面，（x1，x2）表示两位度的输入，（y1，y2）表示两位的适应值，

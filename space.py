@@ -9,7 +9,6 @@ import matplotlib.pyplot as plt
 
 from evaluation import evaluation_function
 
-#from evaluation import evaluation_function
 class dimension_discrete():
 	def __init__(self, name, default_value, step, rrange, frozen = False, model = {"name":"normal", "param":0.4}):
 		'''
@@ -40,39 +39,52 @@ class dimension_discrete():
 		self.sample_box = []
 		for idx in range(int(self.scale)):
 			self.sample_box.append(self.rrange[0]+idx*step)
+
 	def set(self, sample_index):
 		assert (sample_index >= 0 and sample_index <=self.scale-1)
 		self.current_index = sample_index
 		self.current_value = self.sample_box[sample_index]
+
 	def original_set(self, sample_index):
 		assert (sample_index >= 0 and sample_index <=self.scale-1)
 		self.default_index = sample_index
 		self.default_value = self.sample_box[sample_index]
+
 	def reset(self):
 		self.current_index = self.default_index
 		self.current_value = self.default_value
+
 	def get_name(self):
 		return self.name
+	
 	def get_scale(self):
 		return self.scale
+	
 	def get_range_upbound(self):
 		return self.rrange[-1]
+	
 	def sample(self, sample_index):
 		assert (sample_index >= 0 and sample_index <=self.scale-1)
 		if(self.frozen == False):
 			self.current_index = sample_index
 			self.current_value = self.sample_box[sample_index]
 		return self.current_value
+	
 	def get_current_index(self):
 		return self.current_index
+	
 	def get_current_value(self):
 		return self.current_value
+	
 	def get_sample_box(self):
 		return self.sample_box
+	
 	def froze(self):
 		self.frozen = True
+
 	def release(self):
 		self.frozen = False
+
 	def get_model(self):
 		return self.model
 
@@ -89,10 +101,12 @@ class design_space():
 		#self.evaluation = evaluation_function(nnmodel = "VGG16", target = "normal")
 		self.lenth = 0
 		self.scale = 1
+
 	def append(self,dimension_discrete):
 		self.dimension_box.append(dimension_discrete)
 		self.lenth = self.lenth + 1
 		self.scale = self.scale * dimension_discrete.get_scale()
+
 	def get_status(self):
 		'''
 		status is a dict class that can be used for matching of dimension "name":"dimension_value"
@@ -101,59 +115,77 @@ class design_space():
 		for item in self.dimension_box:
 			status[item.get_name()] = item.get_current_value()
 		return status
+	
 	def get_status_value(self):
 		status_value = list()
 		for item in self.dimension_box:
 			status_value.append(item.get_current_value())
 		return status_value
+	
 	def get_action_list(self):
 		action_list = list()
 		for item in self.dimension_box:
 			action_list.append(item.get_current_index())
 		return action_list
+	
 	def print_status(self):
 		for item in self.dimension_box:
 			print(item.get_name(),item.get_current_value())
+
 	def sample_one_dimension(self, dimension_index, sample_index):
 		assert (dimension_index >= 0 and dimension_index <= self.lenth-1)
 		self.dimension_box[dimension_index].sample(sample_index)
 		return self.get_status()
+	
 	def set_one_dimension(self, dimension_index, sample_index):
 		assert (dimension_index >= 0 and dimension_index <= self.lenth-1)
 		self.dimension_box[dimension_index].set(sample_index)
-		return self.get_status()		
+		return self.get_status()	
+		
 	def status_set(self, best_action_list):
 		for dimension, action in zip(self.dimension_box, best_action_list):
 			dimension.set(action)
 		return self.get_status()
+	
 	def original_status_set(self, best_action_list):
 		for dimension, action in zip(self.dimension_box, best_action_list):
 			dimension.original_set(action)
 		return self.get_status()
+	
 	def status_reset(self):
 		for dimension in self.dimension_box:
 			dimension.reset()
 		return self.get_status()
+	
 	def get_lenth(self):
 		return self.lenth
+	
 	def get_scale(self):
 		return self.scale
+	
 	def get_dimension_current_index(self, dimension_index):
 		return self.dimension_box[dimension_index].get_current_index()
+	
 	def get_dimension_scale(self, dimension_index):
 		return self.dimension_box[dimension_index].get_scale()
+	
 	def get_dimension_sample_box(self, dimension_index):
 		return self.dimension_box[dimension_index].sample_box
+	
 	def froze_one_dimension(self, dimension_index):
 		self.dimension_box[dimension_index].froze()
+
 	def release_one_dimension(self, dimension_index):
 		self.dimension_box[dimension_index].release()
+
 	def froze_dimension(self, dimension_index_list):
 		for index in dimension_index_list:
 			self.froze_one_dimension(index)
+
 	def release_dimension(self, dimension_index_list):
 		for index in dimension_index_list:
 			self.release_one_dimension(index)
+			
 	def get_dimension_model(self, dimension_index):
 		return self.dimension_box[dimension_index].get_model()
 	
