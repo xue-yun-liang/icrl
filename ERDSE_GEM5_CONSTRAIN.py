@@ -135,11 +135,6 @@ class RLDSE():
 		self.best_objectvalue2_list = list()
 		self.best_objectvalue2_list.append(self.best_objectvalue)
 
-
-
-
-
-
 		self.power_list = list()
 
 		self.action_array = list()
@@ -195,8 +190,6 @@ class RLDSE():
 					metrics = evaluation(next_status)
 
 					if (metrics != None):
-
-
 						energy =metrics['latency']
 						area = metrics['Area']
 						runtime = metrics['latency']

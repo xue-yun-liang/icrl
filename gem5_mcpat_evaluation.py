@@ -16,14 +16,14 @@ def evaluation(status):
     l1i_assoc = str(int(math.pow(2, status["l1i_assoc"])))
     l2_assoc = str(int(math.pow(2, status["l2_assoc"])))
     sys_clock = str(status["sys_clock"])
-    print(core)
-    print(l1i_size)
-    print(l1d_size)
-    print(l2_size)
-    print(l1d_assoc)
-    print(l1i_assoc)
-    print(l2_assoc)
-    print(sys_clock)
+    print("core = ", core)
+    print("l1i_size =", l1i_size)
+    print("l1d_size =", l1d_size)
+    print("l2_size =", l2_size)
+    print("l1d_assoc =", l1d_assoc)
+    print("l1i_assoc =", l1i_assoc)
+    print("l2_assoc =", l2_assoc)
+    print("sys_clock =", sys_clock)
     # core = "3"
     # benchmarksize =""
     # l1i_size ="256"
@@ -34,10 +34,26 @@ def evaluation(status):
     # l2_assoc="8"
     # sys_clock="2"
     start = time.time()
-    print("++++++++++++++++++++++++++starsimulatr+++++++++++++++++++++++++++++++")
+    bar = "========================="
 
+
+    # Execute the simulation command
+    print(bar, "START SIMULATION", bar)
     os.system(
-        "/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast -re /parsec-tests2/gem5_2/gem5/configs/example/fs.py --script=/parsec-tests2/parsec-image/benchmark_src/canneal_{}c_simdev.rcS -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus={} --sys-clock='{}GHz' --caches --l2cache   --l1d_size='{}kB' --l1i_size='{}kB' --l2_size='{}kB' --l1d_assoc={} --l1i_assoc={} --l2_assoc={} --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img".format(
+        "/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast -re \
+        /parsec-tests2/gem5_2/gem5/configs/example/fs.py \
+        --script=/parsec-tests2/parsec-image/benchmark_src/canneal_{}c_simdev.rcS \
+        -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus={} \
+        --sys-clock='{}GHz' \
+        --caches --l2cache   \
+        --l1d_size='{}kB' \
+        --l1i_size='{}kB' \
+        --l2_size='{}kB' \
+        --l1d_assoc={} \
+        --l1i_assoc={} \
+        --l2_assoc={} \
+        --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp \
+        --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img".format(
             core,
             core,
             sys_clock,
@@ -49,13 +65,15 @@ def evaluation(status):
             l2_assoc,
         )
     )
-    # os.system("/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast  -re  /parsec-tests2/gem5_2/gem5/configs/example/fs.py --script=/parsec-tests2/parsec-image/benchmark_src/blackscholes_2c_simdev.rcS -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus=2 --sys-clock='2.2GHz' --caches --l2cache   --l1d_size='128kB' --l1i_size='128kB' --l2_size='512kB' --l1d_assoc=8 --l1i_assoc=8 --l2_assoc=8 --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img")
-    bar = "========================="
-    print(bar, "endsimulatr", bar)
+    print(bar, "END SIMULATER", bar)
 
-    print(bar + "startdevore", bar)
+    # a test command for simulation
+    # os.system("/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast  -re  /parsec-tests2/gem5_2/gem5/configs/example/fs.py --script=/parsec-tests2/parsec-image/benchmark_src/blackscholes_2c_simdev.rcS -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus=2 --sys-clock='2.2GHz' --caches --l2cache   --l1d_size='128kB' --l1i_size='128kB' --l2_size='512kB' --l1d_assoc=8 --l1i_assoc=8 --l2_assoc=8 --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img")
+    
+
+    print(bar + "START DEVORE", bar)
     f1 = open("/m5out/stats.txt")
-    ss = bar + "Begin Simulation Statistics " + bar
+    ss = bar + "BEGIN SIMULATION STATISTICS" + bar
     sr = f1.read().split(ss)
     f1.close()
     for i in range(len(sr)):
@@ -135,16 +153,3 @@ def evaluation(status):
         )
         print(f"current status can't be evaluated")
         return None
-
-
-# cheackdik = dict()
-# cheackdik['core']=16
-# cheackdik['l1i_size']=10
-# cheackdik['l1d_size']=10
-# cheackdik['l2_size']=7
-# cheackdik['l1d_assoc']=8
-# cheackdik['l1i_assoc']=8
-# cheackdik['l2_assoc']=8
-# cheackdik['sys_clock']=2
-# metrics=evaluation(cheackdik)
-# print (metrics)

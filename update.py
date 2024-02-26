@@ -5,7 +5,7 @@ import pareto
 import archive
 
 
-def update_v(v_, v_min, v_max, in_, in_pbest, in_gbest, w, c1, c2):
+def update_v(v_temp, v_min, v_max, in_, in_pbest, in_gbest, w, c1, c2):
     # 更新速度
     # v_temp = w*v_ + c1*(in_pbest-in_) + c2*(in_gbest-in_)
     # 速度边界处理ֵ
