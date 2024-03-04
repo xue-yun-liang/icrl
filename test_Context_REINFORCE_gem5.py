@@ -7,6 +7,7 @@ from evaluation import evaluation_function
 from config import my_test_config
 from multiprocessing import Pool
 from gem5_mcpat_evaluation import evaluation
+from transformer import model, optim
 import torch
 import random
 import numpy
@@ -133,6 +134,14 @@ class RLDSE:
 
         self.action_array = list()
         self.reward_array = list()
+        
+        # context encoder module
+        # input = obs + action + reward + reset + goal + time
+        # give the all info for encoder module
+        # the decoder will change the weight of info during training
+        self.embedding = model.PositionalEncoding()
+        self.meta_encoder = model.Transformer()
+        self.meta_encoder_lr = 0.05
 
     def train(self):
         current_status = dict()  # S

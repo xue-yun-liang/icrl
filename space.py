@@ -328,7 +328,7 @@ def create_space(layer_num):
     return DSE_action_space
 
 
-##########lijianfei_gem5###################################
+######################lijianfei_gem5#######################
 def create_space_gem5():
     DSE_action_space = design_space()
     num_param = 0.5

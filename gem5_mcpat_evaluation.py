@@ -7,6 +7,11 @@ import subprocess
 
 
 def evaluation(status):
+    # just accpet a param "stats":dict()
+    # return the evaluation metris:dict() 
+    
+    # process by gem5 simulation , simulation result trans to mcpat
+    # mcpat trans to final metric
     core = str(status["core"])
     benchmarksize = ""
     l1i_size = str(int(math.pow(2, int(status["l1i_size"]))))
@@ -33,27 +38,27 @@ def evaluation(status):
     # l1i_assoc="8"
     # l2_assoc="8"
     # sys_clock="2"
+    
     start = time.time()
     bar = "========================="
-
 
     # Execute the simulation command
     print(bar, "START SIMULATION", bar)
     os.system(
         "/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast -re \
-        /parsec-tests2/gem5_2/gem5/configs/example/fs.py \
-        --script=/parsec-tests2/parsec-image/benchmark_src/canneal_{}c_simdev.rcS \
-        -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus={} \
-        --sys-clock='{}GHz' \
-        --caches --l2cache   \
-        --l1d_size='{}kB' \
-        --l1i_size='{}kB' \
-        --l2_size='{}kB' \
-        --l1d_assoc={} \
-        --l1i_assoc={} \
-        --l2_assoc={} \
-        --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp \
-        --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img".format(
+            /parsec-tests2/gem5_2/gem5/configs/example/fs.py \
+            --script=/parsec-tests2/parsec-image/benchmark_src/canneal_{}c_simdev.rcS \
+            -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus={} \
+            --sys-clock='{}GHz' \
+            --caches --l2cache   \
+            --l1d_size='{}kB' \
+            --l1i_size='{}kB' \
+            --l2_size='{}kB' \
+            --l1d_assoc={} \
+            --l1i_assoc={} \
+            --l2_assoc={} \
+            --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp \
+            --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img".format(
             core,
             core,
             sys_clock,
@@ -68,22 +73,33 @@ def evaluation(status):
     print(bar, "END SIMULATER", bar)
 
     # a test command for simulation
-    # os.system("/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast  -re  /parsec-tests2/gem5_2/gem5/configs/example/fs.py --script=/parsec-tests2/parsec-image/benchmark_src/blackscholes_2c_simdev.rcS -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus=2 --sys-clock='2.2GHz' --caches --l2cache   --l1d_size='128kB' --l1i_size='128kB' --l2_size='512kB' --l1d_assoc=8 --l1i_assoc=8 --l2_assoc=8 --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img")
-    
+    # os.system("/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast  -re  
+    # /parsec-tests2/gem5_2/gem5/configs/example/fs.py 
+    # --script=/parsec-tests2/parsec-image/benchmark_src/blackscholes_2c_simdev.rcS 
+    # -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus=2 
+    # --sys-clock='2.2GHz' 
+    # --caches --l2cache   
+    # --l1d_size='128kB' 
+    # --l1i_size='128kB' 
+    # --l2_size='512kB' 
+    # --l1d_assoc=8 
+    # --l1i_assoc=8 
+    # --l2_assoc=8 
+    # --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp 
+    # --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img")
 
     print(bar + "START DEVORE", bar)
     f1 = open("/m5out/stats.txt")
-    ss = bar + "BEGIN SIMULATION STATISTICS" + bar
+    ss = "---------- Begin Simulation Statistics ----------"
     sr = f1.read().split(ss)
     f1.close()
     for i in range(len(sr)):
         f = open("/m5out/%d.txt" % i, "w")
         f.write(sr[i] if i == 0 else ss + sr[i])
         f.close()
+    print(bar, "END DEVORE", bar)
 
-    print(bar, "end devore", bar)
     try:
-
         if os.path.exists("/m5out/3.txt"):
             print(bar, "startGEM5ToMcPAT", bar)
             command_2 = [
@@ -100,8 +116,8 @@ def evaluation(status):
             process2 = Popen(command_2)
             process2.wait()
             print(bar, "endGEM5ToMcPAT", bar)
-            print(bar, "startMcPAT", bar)
 
+            print(bar, "startMcPAT", bar)
             file_output = open(
                 "/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log", "w"
             )
@@ -114,15 +130,20 @@ def evaluation(status):
             ]
             process3 = Popen(command_3, stdout=file_output)
             process3.wait()
-            print(bar, "endMcPAT", bar)
-            print(bar, "startprintenergy", bar)
-            # command_4 = ["python3","/parsec-tests2/cmcpat/cMcPAT/Scripts/print_energy.py" ,"/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log","/parsec-tests2/gem5_2/gem5/m5out/3.txt"]
+            print(bar, "END McPAT", bar)
+            
+            print(bar, "START PRINT ENERGY", bar)
+            # command_4 = ["python3",
+            # "/parsec-tests2/cmcpat/cMcPAT/Scripts/print_energy.py" ,
+            # "/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log",
+            # "/parsec-tests2/gem5_2/gem5/m5out/3.txt"]
             # process4 = Popen(command_4)
             # process4.wait()
             metrics = getevaluation(
                 "/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log", "/m5out/3.txt"
             )
-            print(bar, "endprintenergy", bar)
+            print(bar, "END PRINT ENERGY", bar)
+            
             os.remove("/m5out/3.txt") if os.path.exists("/m5out/3.txt") else None
             (
                 os.remove("/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log")
@@ -135,7 +156,7 @@ def evaluation(status):
                 else None
             )
             end = time.time()
-            print("程序process_1的运行时间为：{}".format(end - start))
+            print("The process_1 running time:{}".format(end - start))
             return metrics
         else:
             return None
