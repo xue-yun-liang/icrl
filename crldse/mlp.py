@@ -1,6 +1,5 @@
 import torch
 
-
 class mlp_qfunction(torch.nn.Module):
     def __init__(self, space_lenth):
         super(mlp_qfunction, self).__init__()

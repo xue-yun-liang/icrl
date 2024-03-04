@@ -1,14 +1,14 @@
-from space import dimension_discrete
-from space import design_space
-from space import create_space_gem5
-from space import tsne3D
-from actor import actor_policyfunction, get_log_prob
-from evaluation import evaluation_function
-from config import my_test_config
+from crldse.space import dimension_discrete
+from crldse.space import design_space
+from crldse.space import create_space_gem5
+from crldse.space import tsne3D
+from crldse.actor import actor_policyfunction, get_log_prob
+from crldse.evaluation import evaluation_function
+from crldse.config import my_test_config
 from multiprocessing import Pool
 
-from mlp import mlp_fillter
-from gem5_mcpat_evaluation import evaluation
+from crldse.mlp import mlp_fillter
+from crldse.gem5_mcpat_evaluation import evaluation
 import torch
 import random
 import numpy

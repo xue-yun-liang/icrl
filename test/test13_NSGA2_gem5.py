@@ -1,9 +1,9 @@
 import numpy as np
 import geatpy as ea
-from evaluation import evaluation_function
-from config import my_test_config
+from crldse.evaluation import evaluation_function
+from crldse.config import my_test_config
 import random
-from gem5_mcpat_evaluation_3 import evaluation
+from crldse.gem5_mcpat_evaluation import evaluation
 from matplotlib import pyplot as plt
 
 from multiprocessing import Pool

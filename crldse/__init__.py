@@ -4,7 +4,6 @@ import numpy as np
 import archive
 import pareto
 
-
 def init_designparams(particals, in_min, in_max):
     in_dim = len(in_max)  # 输入参数维度
     in_temp = np.zeros((particals, in_dim))

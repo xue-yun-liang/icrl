@@ -1,4 +1,4 @@
-from gem5_mcpat_evaluation import evaluation
+from crldse.gem5_mcpat_evaluation import evaluation
 
 
 cheackdik = dict()
