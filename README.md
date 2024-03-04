@@ -1,7 +1,6 @@
-# Contextual-RL for DSE of Multi-core Process
+# A multi-core processor design space exploration algorithm based on in-context RL
 
-parsec-tests2和m5out两文件夹是评估函数放gem5和mcpat的目录，
+## Intro
+The parsec-tests2 and m5out folders are used to put the sum of gem5&mcpat evaluation functions.
 
-（估计要自己装一下，这两个文件夹放进来里是便于看代码，文件里面是空的）
-
-实验用的wsl的镜像文件传到云盘，需要的话直接在自己的电脑上挂一下应该也可以用。
+Since some of the previous reinforcement learning methods for processor design space exploration are one-time, that is, each time the constraint parameters are set, and then start training a new model suitable for the current scene, whenever the design requirements under the new scene (new constraints) are needed, the design needs to be re-designed from scratch, so the time cost is very high, this project is committed to applying In-Context RL to DSE, so as to realize the new constraint parameters that can modify the design framework and quickly apply it to the new scene.
