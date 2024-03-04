@@ -126,7 +126,7 @@ def get_kldivloss_and_log_prob(policyfunction, design_space, status, action_inde
 	model = design_space.get_dimension_model(dimension_index)
 	if(model["name"] == "normal"):
 		target_distribution = get_normal_tensor(design_space, action_index, dimension_index, model["param"]).float()
-		if(dimension_index == 2): print(f"normal: target_distribution{target_distribution}")	
+		if(dimension_index == 2): logger.info(f"normal: target_distribution{target_distribution}")	
 	elif(model["name"] == "one_hot"):
 		target_distribution = index_to_one_hot(len(probs), action_index)
 	kldivloss = torch.nn.functional.kl_div(probs.log(), target_distribution, reduction = "sum")
@@ -278,7 +278,7 @@ class actor_policyfunction():
 		log_prob_sampled = prob_sampled.log()
 
 		#if(dimension_index == 8):
-		#	print(f"\nstep:{dimension_index}, probs:{probs}")
+		#	logger.info(f"\nstep:{dimension_index}, probs:{probs}")
 		return entropy, action_index, log_prob_sampled
 
 	def action_choose_with_no_grad(self, policyfunction, design_space, dimension_index, std = 0.1, is_train = True):
@@ -295,7 +295,7 @@ class actor_policyfunction():
 					probs_noise = torch.clamp(probs_noise, 0, 1)
 					#probs_noise = abs(probs_noise)
 					#probs_noise = probs_noise/probs_noise.sum()
-					#print(f"probs_noise:{probs_noise}")
+					#logger.info(f"probs_noise:{probs_noise}")
 					#probs_noise = probs
 				elif(model["name"] == "one_hot"):
 					noise = torch.normal(mean = torch.zeros_like(probs), std = model["param"])
@@ -308,8 +308,8 @@ class actor_policyfunction():
 
 			'''
 			if(dimension_index == 2):
-				print(f"probs:{probs}")
-				print(f"noise:{noise}")
+				logger.info(f"probs:{probs}")
+				logger.info(f"noise:{noise}")
 				#pdb.set_trace()
 			'''
 		
@@ -317,8 +317,8 @@ class actor_policyfunction():
 			#pdb.set_trace()
 			#probs_noise = torch.abs(probs + noise)
 			#probs_noise = torch.nn.functional.softmax(probs + noise)
-			#print(f"original:{probs}")
-			#print(f"noise:{probs_noise}")
+			#logger.info(f"original:{probs}")
+			#logger.info(f"noise:{probs_noise}")
 			#### use multinomial to realize the sampling of policy function
 			action_index = probs_noise.multinomial(num_samples = 1).data
 
@@ -340,7 +340,7 @@ class actor_policyfunction():
 					probs_noise = torch.clamp(probs_noise, 0, 1)
 				# probs_noise = abs(probs_noise)
 				# probs_noise = probs_noise/probs_noise.sum()
-				# print(f"probs_noise:{probs_noise}")
+				# logger.info(f"probs_noise:{probs_noise}")
 				# probs_noise = probs
 				elif (model["name"] == "one_hot"):
 					noise = torch.normal(mean=torch.zeros_like(probs), std=model["param"])
@@ -353,16 +353,16 @@ class actor_policyfunction():
 
 			'''
 			if(dimension_index == 2):
-				print(f"probs:{probs}")
-				print(f"noise:{noise}")
+				logger.info(f"probs:{probs}")
+				logger.info(f"noise:{noise}")
 				#pdb.set_trace()
 			'''
 
 			# pdb.set_trace()
 			# probs_noise = torch.abs(probs + noise)
 			# probs_noise = torch.nn.functional.softmax(probs + noise)
-			# print(f"original:{probs}")
-			# print(f"noise:{probs_noise}")
+			# logger.info(f"original:{probs}")
+			# logger.info(f"noise:{probs_noise}")
 			#### use multinomial to realize the sampling of policy function
 			action_index = probs_noise.multinomial(num_samples=1).data
 
@@ -380,13 +380,13 @@ class actor_policyfunction():
 
 			if signol==1:
 				probs = probs1
-				#print("1")
+				#logger.info("1")
 			elif signol==2:
 				probs = probs2
-				#print("2")
+				#logger.info("2")
 			else:
 				probs = probs3
-				#print("3")
+				#logger.info("3")
 
 			if (is_train):
 				model = design_space.get_dimension_model(dimension_index)
@@ -396,7 +396,7 @@ class actor_policyfunction():
 					probs_noise = torch.clamp(probs_noise, 0, 1)
 				# probs_noise = abs(probs_noise)
 				# probs_noise = probs_noise/probs_noise.sum()
-				# print(f"probs_noise:{probs_noise}")
+				# logger.info(f"probs_noise:{probs_noise}")
 				# probs_noise = probs
 				elif (model["name"] == "one_hot"):
 					noise = torch.normal(mean=torch.zeros_like(probs), std=model["param"])
@@ -409,16 +409,16 @@ class actor_policyfunction():
 
 			'''
 			if(dimension_index == 2):
-				print(f"probs:{probs}")
-				print(f"noise:{noise}")
+				logger.info(f"probs:{probs}")
+				logger.info(f"noise:{noise}")
 				#pdb.set_trace()
 			'''
 
 			# pdb.set_trace()
 			# probs_noise = torch.abs(probs + noise)
 			# probs_noise = torch.nn.functional.softmax(probs + noise)
-			# print(f"original:{probs}")
-			# print(f"noise:{probs_noise}")
+			# logger.info(f"original:{probs}")
+			# logger.info(f"noise:{probs_noise}")
 			#### use multinomial to realize the sampling of policy function
 			action_index = probs_noise.multinomial(num_samples=1).data
 
@@ -433,6 +433,6 @@ class actor_policyfunction():
 			probs_softmax = torch.softmax(probs, dim = -1)
 			#### use multinomial to realize the sampling of policy function
 			action_index = probs_softmax.multinomial(num_samples = 1).data
-			#print(f"probs:{probs}")
+			#logger.info(f"probs:{probs}")
 			#action_index = torch.argmax(probs)
 		return action_index, probs

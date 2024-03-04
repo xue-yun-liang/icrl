@@ -18,7 +18,7 @@ class Plot_pareto:
                 [self.y1[i,j],self.y2[i,j]] = fit.fitness_([self.x1[i,j],self.x2[i,j]])
         if os.path.exists('./img_txt') == False:
             os.makedirs('./img_txt')
-            print ('创建文件夹img_txt:保存粒子群每一次迭代的图片')
+            logger.info ('创建文件夹img_txt:保存粒子群每一次迭代的图片')
     def show(self,in_,fitness_,archive_in,archive_fitness,i):
         #共3个子图，第1、2/子图绘制输入坐标与适应值关系，第3图展示pareto边界的形成过程
         fig = plt.figure('第'+str(i+1)+'次迭代',figsize = (17,5))
@@ -46,5 +46,5 @@ class Plot_pareto:
         ax3.scatter(archive_fitness[:,0],archive_fitness[:,1],s=30, c='red', marker=".",alpha = 1.0)
         #plt.show()
         plt.savefig('./img_txt/'+str(i+1)+'.png')
-        print ('第'+str(i+1)+'次迭代的图片保存于 img_txt 文件夹')
+        logger.info ('第'+str(i+1)+'次迭代的图片保存于 img_txt 文件夹')
         plt.close()

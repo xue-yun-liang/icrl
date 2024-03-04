@@ -1,6 +1,6 @@
 BIOS EBDA/lowmem at: 00000000/00000000
 Linux version 2.6.28-rc4-dirty (jhestnes@RADLAB-0002) (gcc version 4.4.3 (Ubuntu 4.4.3-4ubuntu5) ) #5 SMP Mon Jun 21 13:39:45 PDT 2010
-Command line: earlyprintk=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1
+Command line: earlylogger.infok=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1
 KERNEL supported cpus:
   Intel GenuineIntel
   AMD AuthenticAMD
@@ -23,13 +23,13 @@ Modules linked in:
 Pid: 0, comm: swapper Not tainted 2.6.28-rc4-dirty #5
 Call Trace:
  [<ffffffff8023aef0>] warn_slowpath+0xc0/0x100
- [<ffffffff803a3f78>] vsnprintf+0x268/0x6b0
- [<ffffffff803a3f78>] vsnprintf+0x268/0x6b0
+ [<ffffffff803a3f78>] vsnlogger.infof+0x268/0x6b0
+ [<ffffffff803a3f78>] vsnlogger.infof+0x268/0x6b0
  [<ffffffff802547dd>] up+0xd/0x40
  [<ffffffff8023b6de>] release_console_sem+0x1ae/0x200
  [<ffffffff8021c5f0>] post_set+0x20/0x40
  [<ffffffff808d7ba6>] mtrr_trim_uncached_memory+0x327/0x32b
- [<ffffffff80615074>] printk+0x40/0x45
+ [<ffffffff80615074>] logger.infok+0x40/0x45
  [<ffffffff808d3c57>] setup_arch+0x381/0x5c3
  [<ffffffff808cd971>] start_kernel+0x6e/0x321
  [<ffffffff808cd405>] x86_64_start_kernel+0xd9/0xdd
@@ -61,7 +61,7 @@ SMP: Allowing 1 CPUs, 0 hotplug CPUs
 Allocating PCI resources starting at c4000000 (gap: c0000000:3fff0000)
 PERCPU: Allocating 53248 bytes of per cpu data
 Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 127107
-Kernel command line: earlyprintk=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1
+Kernel command line: earlylogger.infok=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1
 Initializing CPU#0
 PID hash table entries: 2048 (order: 11, 16384 bytes)
 Fast TSC calibration using PIT

@@ -26,9 +26,9 @@ class Mopso:
         # 计算适应度值ֵ
         fitness_curr = []
         for i in range((self.in_).shape[0]):
-            print(f"====================number{i}====================")
+            logger.info(f"====================number{i}====================")
             fitness_cheack, singnal = fitness_(self.in_[i])
-            print(singnal)
+            logger.info(singnal)
             fitness_curr.append(fitness_cheack)
             if singnal:
                 self.bestpower = fitness_cheack[0]
@@ -106,7 +106,7 @@ class Mopso:
         self.initialize()
         # self.plot_.show(self.in_,self.fitness_,self.archive_in,self.archive_fitness,-1)
         for i in range(cycle_):
-            print(f"====================cycle{i}====================")
+            logger.info(f"====================cycle{i}====================")
             self.update_()
             # self.plot_.show(self.in_,self.fitness_,self.archive_in,self.archive_fitness,i)
         return self.archive_in, self.archive_fitness

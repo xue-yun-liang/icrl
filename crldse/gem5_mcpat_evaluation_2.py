@@ -1,10 +1,12 @@
 from subprocess import Popen, PIPE
 from getevaluation import getevaluation
+from logger import Logger
 import time
 import os
 import math
 import subprocess
 
+logger = Logger.get_logger()
 
 def evaluation(status):
     core = str(status["core"])
@@ -16,14 +18,14 @@ def evaluation(status):
     l1i_assoc = str(int(math.pow(2, status["l1i_assoc"])))
     l2_assoc = str(int(math.pow(2, status["l2_assoc"])))
     sys_clock = str(status["sys_clock"])
-    print("core = ", core)
-    print("l1i_size =", l1i_size)
-    print("l1d_size =", l1d_size)
-    print("l2_size =", l2_size)
-    print("l1d_assoc =", l1d_assoc)
-    print("l1i_assoc =", l1i_assoc)
-    print("l2_assoc =", l2_assoc)
-    print("sys_clock =", sys_clock)
+    logger.info("core = ", core)
+    logger.info("l1i_size =", l1i_size)
+    logger.info("l1d_size =", l1d_size)
+    logger.info("l2_size =", l2_size)
+    logger.info("l1d_assoc =", l1d_assoc)
+    logger.info("l1i_assoc =", l1i_assoc)
+    logger.info("l2_assoc =", l2_assoc)
+    logger.info("sys_clock =", sys_clock)
     # core = "3"
     # benchmarksize =""
     # l1i_size ="256"
@@ -35,7 +37,7 @@ def evaluation(status):
     # sys_clock="2"
     start = time.time()
     bar = "========================="
-    print(bar, "starsimulatr", bar)
+    logger.info(bar, "starsimulatr", bar)
 
     os.system(
         "/parsec-tests1/gem5_2/gem5/build/X86/gem5.fast -re \
@@ -65,9 +67,9 @@ def evaluation(status):
         )
     )
 
-    print(bar, "END SIMULATER", bar)
+    logger.info(bar, "END SIMULATER", bar)
 
-    print(bar + "START DEVORE", bar)
+    logger.info(bar + "START DEVORE", bar)
     f1 = open("/m5out1/stats.txt")
     ss = "---------- Begin Simulation Statistics ----------"
     sr = f1.read().split(ss)
@@ -77,11 +79,11 @@ def evaluation(status):
         f.write(sr[i] if i == 0 else ss + sr[i])
         f.close()
 
-    print(bar, "END DEVORE", bar)
+    logger.info(bar, "END DEVORE", bar)
     try:
 
         if os.path.exists("/m5out1/3.txt"):
-            print(bar, "startGEM5ToMcPAT", bar)
+            logger.info(bar, "startGEM5ToMcPAT", bar)
             command_2 = [
                 "python3",
                 "/parsec-tests1/cmcpat/cMcPAT/Scripts/GEM5ToMcPAT.py",
@@ -95,8 +97,8 @@ def evaluation(status):
             ]
             process2 = Popen(command_2)
             process2.wait()
-            print(bar, "endGEM5ToMcPAT", bar)
-            print(bar, "startMcPAT", bar)
+            logger.info(bar, "endGEM5ToMcPAT", bar)
+            logger.info(bar, "startMcPAT", bar)
 
             file_output = open(
                 "/parsec-tests1/cmcpat/cMcPAT/mcpatresult/test2.log", "w"
@@ -105,20 +107,20 @@ def evaluation(status):
                 "/parsec-tests1/cmcpat/cMcPAT/mcpat/mcpat",
                 "-infile",
                 "/parsec-tests1/cmcpat/cMcPAT/Scripts/test.xml",
-                "-print_level",
+                "-logger.info_level",
                 "5",
             ]
             process3 = Popen(command_3, stdout=file_output)
             process3.wait()
-            print(bar, "END McPAT", bar)
-            print(bar, "START PRINT ENERGY", bar)
-            # command_4 = ["python3","/parsec-tests1/cmcpat/cMcPAT/Scripts/print_energy.py" ,"/parsec-tests1/cmcpat/cMcPAT/mcpatresult/test2.log","/parsec-tests1/gem5_2/gem5/m5out1/3.txt"]
+            logger.info(bar, "END McPAT", bar)
+            logger.info(bar, "START logger.info ENERGY", bar)
+            # command_4 = ["python3","/parsec-tests1/cmcpat/cMcPAT/Scripts/logger.info_energy.py" ,"/parsec-tests1/cmcpat/cMcPAT/mcpatresult/test2.log","/parsec-tests1/gem5_2/gem5/m5out1/3.txt"]
             # process4 = Popen(command_4)
             # process4.wait()
             metrics = getevaluation(
                 "/parsec-tests1/cmcpat/cMcPAT/mcpatresult/test2.log", "/m5out1/3.txt"
             )
-            print(bar, "endprintenergy", bar)
+            logger.info(bar, "endlogger.infoenergy", bar)
             os.remove("/m5out1/3.txt") if os.path.exists("/m5out1/3.txt") else None
             (
                 os.remove("/parsec-tests1/cmcpat/cMcPAT/mcpatresult/test2.log")
@@ -131,7 +133,7 @@ def evaluation(status):
                 else None
             )
             end = time.time()
-            print("程序process_1的运行时间为：{}".format(end - start))
+            logger.info("程序process_1的运行时间为：{}".format(end - start))
             return metrics
         else:
             return None
@@ -147,7 +149,7 @@ def evaluation(status):
             if os.path.exists("/parsec-tests1/cmcpat/cMcPAT/Scripts/test.xml")
             else None
         )
-        print(f"current status can't be evaluated")
+        logger.info(f"current status can't be evaluated")
         return None
 
 
@@ -161,4 +163,4 @@ def evaluation(status):
 # cheackdik['l2_assoc']=8
 # cheackdik['sys_clock']=2
 # metrics=evaluation(cheackdik)
-# print (metrics)
+# logger.info (metrics)

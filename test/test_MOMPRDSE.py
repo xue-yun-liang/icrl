@@ -202,7 +202,7 @@ class RLDSE:
         self.fillter_list = list()
 
     def train_fillter(self, fillter, obs_list, reward_list):
-        print(
+        logger.info(
             f"**************  Training the fillter, now we have {len(obs_list)} samples   ******************"
         )
         data_size = len(obs_list)
@@ -216,7 +216,7 @@ class RLDSE:
         reward_list_back.sort()
         self.best_reward = max(reward_list)
         self.low_reward = reward_list_back[int(0.7 * data_size)]
-        print(
+        logger.info(
             f"***************   refuse_reward = {self.low_reward}, best_reward = {self.best_reward}     ******************"
         )
         for reward in reward_list:
@@ -225,7 +225,7 @@ class RLDSE:
                 refuse_record += 1
             else:
                 target_list.append(1)
-        # print(f"***************   refuse_ratio = {refuse_record/data_size}     ******************")
+        # logger.info(f"***************   refuse_ratio = {refuse_record/data_size}     ******************")
 
         temp_optimizer = torch.optim.Adam(fillter.parameters(), 0.001)
         loss_function = torch.nn.CrossEntropyLoss()
@@ -241,7 +241,7 @@ class RLDSE:
             predict = fillter(data)
             loss = loss_function(predict, target)
             if epoch % 200 == 0:
-                print(f"loss:{loss}")
+                logger.info(f"loss:{loss}")
 
             temp_optimizer.zero_grad()
             loss.backward()
@@ -265,7 +265,7 @@ class RLDSE:
         for i, j, d, r in zip(t_predict, t_target, data, reward):
             if i != j:
                 error += 1
-        print(
+        logger.info(
             f"************      accucy = {1 - error / len(test_range)}    ***************"
         )
 
@@ -285,8 +285,8 @@ class RLDSE:
         period = 0
         period_bound = self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND
         while period < self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND:
-            print(period)
-            print(f"period:{period}", end="\r")
+            logger.info(period)
+            logger.info(f"period:{period}", end="\r")
             # here may need a initial function for action_space
             self.DSE_action_space.status_reset()
 
@@ -346,13 +346,13 @@ class RLDSE:
                     reward_list.append(reward)
                     reward2_list.append(reward2)
                     reward3_list.append(reward3)
-            print(f"policy:{signol}")
+            logger.info(f"policy:{signol}")
             self.fillter_train_flag = (
                 (period - self.SAMPLE_PERIOD_BOUND) % 50 == 0
             ) and (period - self.SAMPLE_PERIOD_BOUND != 0)
 
             if period >= self.SAMPLE_PERIOD_BOUND and self.fillter_train_flag:
-                print(f"**************  Training the fillter 1    ******************")
+                logger.info(f"**************  Training the fillter 1    ******************")
                 self.train_fillter(
                     self.fillter, self.fillter_obs_buffer, self.fillter_reward_buffer
                 )
@@ -362,7 +362,7 @@ class RLDSE:
             predict = self.fillter(t_obs)
 
             if period >= self.SAMPLE_PERIOD_BOUND and self.fillter_train_flag:
-                print(f"**************  Training the fillter 2    ******************")
+                logger.info(f"**************  Training the fillter 2    ******************")
                 self.train_fillter(
                     self.fillter2, self.fillter_obs_buffer2, self.fillter_reward_buffer2
                 )
@@ -372,7 +372,7 @@ class RLDSE:
             predict2 = self.fillter2(t_obs)
 
             if period >= self.SAMPLE_PERIOD_BOUND and self.fillter_train_flag:
-                print(f"**************  Training the fillter 3    ******************")
+                logger.info(f"**************  Training the fillter 3    ******************")
                 self.train_fillter(
                     self.fillter3, self.fillter_obs_buffer3, self.fillter_reward_buffer3
                 )
@@ -385,7 +385,7 @@ class RLDSE:
                 if (predict[0][0] > 0.9) and not self.fillter_train_flag:
                     self.stack_record += 1
                     if self.stack_record < 50:
-                        # print(f"stack_record:{self.stack_record}")
+                        # logger.info(f"stack_record:{self.stack_record}")
                         stack_renew = stack_renew + 1
                         continue
                     else:
@@ -398,7 +398,7 @@ class RLDSE:
                 if (predict2[0][0] > 0.9) and not self.fillter_train_flag:
                     self.stack_record += 1
                     if self.stack_record < 50:
-                        # print(f"stack_record:{self.stack_record}")
+                        # logger.info(f"stack_record:{self.stack_record}")
                         stack_renew = stack_renew + 1
                         continue
                     else:
@@ -411,7 +411,7 @@ class RLDSE:
                 if (predict3[0][0] > 0.9) and not self.fillter_train_flag:
                     self.stack_record += 1
                     if self.stack_record < 50:
-                        # print(f"stack_record:{self.stack_record}")
+                        # logger.info(f"stack_record:{self.stack_record}")
                         stack_renew = stack_renew + 1
                         continue
                     else:
@@ -421,7 +421,7 @@ class RLDSE:
                     self.stack_record = 0
 
             if next_status in self.fillter_list:
-                print("already in fillter_list")
+                logger.info("already in fillter_list")
                 continue
             else:
                 self.fillter_list.append(next_status)
@@ -447,7 +447,7 @@ class RLDSE:
             else:
                 reward_runtime = 0
                 reward_power = 0
-            print(reward_runtime, reward_power)
+            logger.info(reward_runtime, reward_power)
 
             reward = reward_runtime
 
@@ -455,7 +455,7 @@ class RLDSE:
 
             reward3 = reward_power
 
-            # print(reward,reward3)
+            # logger.info(reward,reward3)
 
             #### recording
             if period < self.SAMPLE_PERIOD_BOUND:
@@ -472,7 +472,7 @@ class RLDSE:
                 ):
                     self.best_objectvalue2 = objectvalue2
 
-                    # print(f"best_status:{objectvalue,objectvalue2 ,power, DSP, BW, BRAM}")
+                    # logger.info(f"best_status:{objectvalue,objectvalue2 ,power, DSP, BW, BRAM}")
                 if self.constraints.is_all_meet():
                     self.all_objectvalue.append(objectvalue)
                     self.all_objectvalue2.append(objectvalue2)
@@ -486,7 +486,7 @@ class RLDSE:
                 self.objectvalue_list.append(reward)
                 self.objectvalue_list2.append(reward2)
                 self.power_list.append(power)
-                print(f"{period}\t{reward}", end="\n", file=reward_log)
+                logger.info(f"{period}\t{reward}", end="\n", file=reward_log)
 
             reward_list.append(reward)
             reward2_list.append(reward2)
@@ -619,7 +619,7 @@ class RLDSE:
                     loss = loss + sample_loss
                 loss = loss / self.BATCH_SIZE
 
-                # print(f"loss:{loss}")
+                # logger.info(f"loss:{loss}")
                 self.worksheet.write(int(period / self.BATCH_SIZE) + 1, 2, loss.item())
                 self.policy_optimizer.zero_grad()
                 loss.backward()
@@ -657,7 +657,7 @@ class RLDSE:
                     loss2 = loss2 + sample2_loss
                 loss2 = loss2 / self.BATCH_SIZE
 
-                # print(f"loss:{loss}")
+                # logger.info(f"loss:{loss}")
                 self.worksheet.write(int(period / self.BATCH_SIZE) + 1, 4, loss2.item())
                 self.policy_optimizer_2.zero_grad()
                 loss2.backward()
@@ -695,22 +695,22 @@ class RLDSE:
                     loss3 = loss3 + sample3_loss
                 loss3 = loss3 / self.BATCH_SIZE
 
-                # print(f"loss:{loss}")
+                # logger.info(f"loss:{loss}")
                 self.worksheet.write(int(period / self.BATCH_SIZE) + 1, 6, loss3.item())
                 self.policy_optimizer_3.zero_grad()
                 loss3.backward()
                 self.policy_optimizer_3.step()
 
-                # print("loss1:",loss)
-                # print("loss2:", loss2)
-                # print("loss3:", loss3)
+                # logger.info("loss1:",loss)
+                # logger.info("loss2:", loss2)
+                # logger.info("loss3:", loss3)
 
             else:
-                print("no avaiable sample")
+                logger.info("no avaiable sample")
             period = period + 1
         # end for-period
         self.workbook.save("record/new_reward&return/RLDSE_reward_record_old.xls")
-        print(f"stack_renew {stack_renew}")
+        logger.info(f"stack_renew {stack_renew}")
 
     def test(self):
         pass
@@ -724,7 +724,7 @@ class RLDSE:
         # 	self.fruntime, t_L = self.evaluation.runtime()
         # 	self.fruntime = self.fruntime * 1000
         # 	self.fpower = self.evaluation.power()
-        # 	print(
+        # 	logger.info(
         # 		"\n@@@@  TEST  @@@@\n",
         # 		"final_status\n", self.fstatus,
         # 		"\nfinal_runtime\n", self.fruntime,
@@ -734,10 +734,10 @@ class RLDSE:
 
 
 def run(iindex):
-    print(f"%%%%TEST{iindex} START%%%%")
+    logger.info(f"%%%%TEST{iindex} START%%%%")
 
     DSE = RLDSE(iindex)
-    print(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
+    logger.info(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
     DSE.train()
     DSE.test()
 
@@ -808,9 +808,9 @@ def run(iindex):
 		if(reward >= 10): high_value_reward += 1
 	high_value_reward_proportion = high_value_reward/len(DSE.reward_array)
 	hfile = open("high_value_reward_proportion_"+str(iindex)+".txt", "w")
-	print(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
+	logger.info(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
 	"""
-    print(f"%%%%TEST{iindex} END%%%%")
+    logger.info(f"%%%%TEST{iindex} END%%%%")
 
 
 if __name__ == "__main__":

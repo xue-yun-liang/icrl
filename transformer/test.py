@@ -56,9 +56,9 @@ def concatenate_input(obs, action, prev_action, reward, reset, goal, current_tim
 
 input = concatenate_input(obs, action, prev_action, reward, reset, goal, current_time)
 
-print(input)
+logger.info(input)
 
 pos_embed = PositionalEncoding(input)
 new_encode = Transformer()
 encoder_output = new_encode.forward(pos_embed)
-print(new_encode)
+logger.info(new_encode)

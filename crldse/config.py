@@ -1,3 +1,7 @@
+from logger import Logger
+
+logger = Logger.get_logger()
+
 class constraint:
     def __init__(self, name, threshold, threshold_ratio):
         self.name = name
@@ -95,7 +99,7 @@ class constraints:
 
     def print(self):
         for constraint in self.constraint_list:
-            constraint.print()
+            constraint.logger.info()
 
 
 class test_config:
@@ -185,14 +189,14 @@ class test_config:
         self.constraints.append(BRAM)
 
     def config_check(self):
-        print(f"######Config Check######")
-        print(f"configtype:test")
-        print(f"nnmodel:{self.nnmodel}")
-        print(f"layer_num:{self.layer_num}")
-        print(f"target:{self.target}")
+        logger.info(f"######Config Check######")
+        logger.info(f"configtype:test")
+        logger.info(f"nnmodel:{self.nnmodel}")
+        logger.info(f"layer_num:{self.layer_num}")
+        logger.info(f"target:{self.target}")
         for constraint in self.constraints.constraint_list:
-            print(f"{constraint.get_name()}:{constraint.get_threshold()}")
-        print(f"goal:{self.goal}")
+            logger.info(f"{constraint.get_name()}:{constraint.get_threshold()}")
+        logger.info(f"goal:{self.goal}")
 
 
 class my_test_config:
@@ -208,9 +212,9 @@ class my_test_config:
         self.constraints.append(AREA)
 
     def config_check(self):
-        print(f"######Config Check######")
-        print(f"configtype:test")
-        print(f"AERA:{self.AREA_THRESHOLD}")
+        logger.info(f"######Config Check######")
+        logger.info(f"configtype:test")
+        logger.info(f"AERA:{self.AREA_THRESHOLD}")
 
 
 class my_test_config_2:
@@ -226,9 +230,9 @@ class my_test_config_2:
         self.constraints.append(AREA)
 
     def config_check(self):
-        print(f"######Config Check######")
-        print(f"configtype:test")
-        print(f"AERA:{self.AREA_THRESHOLD}")
+        logger.info(f"######Config Check######")
+        logger.info(f"configtype:test")
+        logger.info(f"AERA:{self.AREA_THRESHOLD}")
 
 
 #### only used for test6, test15, test16, test17
@@ -319,11 +323,11 @@ class debug_config:
         self.constraints.append(BRAM)
 
     def config_check(self):
-        print(f"######Config Check######")
-        print(f"configtype:debug")
-        print(f"nnmodel:{self.nnmodel}")
-        print(f"layer_num:{self.layer_num}")
-        print(f"target:{self.target}")
+        logger.info(f"######Config Check######")
+        logger.info(f"configtype:debug")
+        logger.info(f"nnmodel:{self.nnmodel}")
+        logger.info(f"layer_num:{self.layer_num}")
+        logger.info(f"target:{self.target}")
         for constraint in self.constraints.constraint_list:
-            print(f"{constraint.get_name()}:{constraint.get_threshold()}")
-        print(f"goal:{self.goal}")
+            logger.info(f"{constraint.get_name()}:{constraint.get_threshold()}")
+        logger.info(f"goal:{self.goal}")

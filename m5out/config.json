@@ -289,7 +289,7 @@
                 }
             },
             "addr_check": true,
-            "command_line": "earlyprintk=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1",
+            "command_line": "earlylogger.infok=ttyS0 console=ttyS0 lpj=7999923 root=/dev/hda1",
             "e820_table": {
                 "type": "X86E820Table",
                 "cxx_class": "gem5::X86ISA::E820Table",

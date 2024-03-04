@@ -161,7 +161,7 @@ class RLDSE:
 
         period_bound = self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND
         for period in range(self.PERIOD_BOUND):
-            print(f"period:{period}", end="\r")
+            logger.info(f"period:{period}", end="\r")
             # here may need a initial function for action_space
             self.DSE_action_space.status_reset()
 
@@ -216,7 +216,7 @@ class RLDSE:
                         and self.constraints.is_all_meet()
                     ):
                         self.best_objectvalue = objectvalue
-                        print(f"best_status:{objectvalue}")
+                        logger.info(f"best_status:{objectvalue}")
                     if self.constraints.is_all_meet():
                         self.all_objectvalue.append(objectvalue)
                         self.all_objectvalue2.append(objectvalue2)
@@ -261,7 +261,7 @@ class RLDSE:
             # step update policyfunction
             if period % self.BATCH_SIZE == 0:
                 loss = loss / self.BATCH_SIZE
-                # print(f"entropy_loss:{entropy_loss}")
+                # logger.info(f"entropy_loss:{entropy_loss}")
                 self.worksheet.write(int(period / self.BATCH_SIZE) + 1, 2, loss.item())
                 self.policy_optimizer.zero_grad()
                 loss.backward()
@@ -279,7 +279,7 @@ class RLDSE:
 
 
 def run(iindex):
-    print(f"%%%%TEST{iindex} START%%%%")
+    logger.info(f"%%%%TEST{iindex} START%%%%")
     DSE = RLDSE(iindex)
     DSE.train()
     DSE.test()
@@ -313,10 +313,10 @@ def run(iindex):
 		if(reward >= 10): high_value_reward += 1
 	high_value_reward_proportion = high_value_reward/len(DSE.reward_array)
 	hfile = open("high_value_reward_proportion_"+str(iindex)+"_"+ "ACDSE" +".txt", "w")
-	print(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
+	logger.info(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
 	"""
 
-    print(f"%%%%TEST{iindex} END%%%%")
+    logger.info(f"%%%%TEST{iindex} END%%%%")
 
 
 if __name__ == "__main__":

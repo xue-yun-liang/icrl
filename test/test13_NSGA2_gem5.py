@@ -87,7 +87,7 @@ class DSE(ea.Problem):
 
         bar = "====================="
         for index in range(NIND):
-            print(bar, str(my_period + 1), bar)
+            logger.info(bar, str(my_period + 1), bar)
             my_period = my_period + 1
             status = dict()
             status["core"] = int(vec_core[index])
@@ -142,7 +142,7 @@ class DSE(ea.Problem):
 
 
 def run(iindex):
-    print(f"%%%%%%%%%%%%%%%TEST{iindex} START%%%%%%%%%%%%%")
+    logger.info(f"%%%%%%%%%%%%%%%TEST{iindex} START%%%%%%%%%%%%%")
     global my_period, best_runtime_now, best_power_now, power_list, runtime_list
 
     seed = iindex * 10000
@@ -163,19 +163,19 @@ def run(iindex):
     # myalgorithm.recOper.XOVR = 0.7
     myalgorithm.drawing = 1
 
-    print("________________algorithm run_________________")
+    logger.info("________________algorithm run_________________")
     referenceObjV = np.array([50])
     NDSet = myalgorithm.run()
-    print(NDSet)
-    print(NDSet.ObjV)
+    logger.info(NDSet)
+    logger.info(NDSet.ObjV)
 
     objectvalue1 = list()
     objectvalue2 = list()
     for item in NDSet.ObjV:
         objectvalue1.append(item[0])
         objectvalue2.append(item[1])
-    print(objectvalue1)
-    print(objectvalue2)
+    logger.info(objectvalue1)
+    logger.info(objectvalue2)
     # plt.figure(figsize=(9, 6))
     # plt.xlabel('latency')
     # plt.ylabel('power')
@@ -184,8 +184,8 @@ def run(iindex):
 
     # population.save()
 
-    # print("obj_trace", obj_trace[:, 1])
-    # print("var_trace", var_trace)
+    # logger.info("obj_trace", obj_trace[:, 1])
+    # logger.info("var_trace", var_trace)
 
     workbook = xlwt.Workbook(encoding="ascii")
     worksheet = workbook.add_sheet("1")
@@ -200,7 +200,7 @@ def run(iindex):
     name = "record/runtime/" + "_" + "NSGA" + "_" + str(iindex) + ".xls"
     workbook.save(name)
 
-    print(f"**************TEST{iindex} END***********")
+    logger.info(f"**************TEST{iindex} END***********")
 
     workbook = xlwt.Workbook(encoding="ascii")
     worksheet = workbook.add_sheet("1")
@@ -214,7 +214,7 @@ def run(iindex):
     name = "record/runtime/" + "_" + "NSGA" + "_" + str(iindex) + "allvalue" + ".xls"
     workbook.save(name)
 
-    # print(f"**************TEST{iindex} END***********")
+    # logger.info(f"**************TEST{iindex} END***********")
 
     # workbook = xlwt.Workbook(encoding = 'ascii')
     # worksheet = workbook.add_sheet("1")
@@ -226,7 +226,7 @@ def run(iindex):
     # name = "record/runtime/" + "_" + "NSGA" + "_" + str(iindex) +"power"+".xls"
     # workbook.save(name)
 
-    # print(f"**************TEST{iindex} END***********")
+    # logger.info(f"**************TEST{iindex} END***********")
 
 
 if __name__ == "__main__":

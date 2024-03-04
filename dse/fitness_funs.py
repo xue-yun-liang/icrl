@@ -62,7 +62,7 @@ def fitness_(in_):
     fit_1 = runtime + L1 * e_POWER + L2 * e_LAtency + L3 * e_AREA
 
     fit_2 = power + L1 * e_POWER + L2 * e_LAtency + L3 * e_AREA
-    print(fit_2, fit_1)
+    logger.info(fit_2, fit_1)
     # degree_45 = ((in_[0]-in_[1]+in_[2])**2/2)**0.5
     # degree_135 = ((in_[0]+in_[1]+in_[2])**2/2)**0.5
     # fit_1 = 1-np.exp(-(degree_45)**2/0.5)*np.exp(-(degree_135-np.sqrt(200))**2/250)

@@ -541,9 +541,9 @@ class evaluation_function:
                 BRAM_BN_req_L.append(BRAM_BN_req_scheme3_L[i])
                 BRAM_req_L.append(BRAM_req_scheme3_L[i])
 
-        # print('scheme_chosen=',scheme_chosen)
-        # print('scheme2_psumout=',scheme2_psumout)
-        # print('scheme3_weightin=',scheme3_weightin)
+        # logger.info('scheme_chosen=',scheme_chosen)
+        # logger.info('scheme2_psumout=',scheme2_psumout)
+        # logger.info('scheme3_weightin=',scheme3_weightin)
         return datain, dataout, dataweight
 
     def runtime(self):
@@ -608,11 +608,11 @@ class evaluation_function:
         cycle_number = pro_time * self.f
         t_L_ms = [i * 1000 for i in t_L]
 
-        # print('t_L(ms)=',t_L_ms)
-        # print('Processing time per image(ms)=',pro_time*1000)
+        # logger.info('t_L(ms)=',t_L_ms)
+        # logger.info('Processing time per image(ms)=',pro_time*1000)
 
-        # print('cycle_L',cycle_L)
-        # print('cycle=',cycle_number)
+        # logger.info('cycle_L',cycle_L)
+        # logger.info('cycle=',cycle_number)
         return pro_time, t_L
 
     def power(self):
@@ -670,16 +670,16 @@ class evaluation_function:
         Energy_sta = self.P_sta * pro_time
         Energy = Energy_DDR + Energy_BRAM + Energy_COMP + Energy_BN + Energy_sta
 
-        # print('Energy_DDR=',Energy_DDR)
-        # print('Energy_BRAM=',Energy_BRAM)
-        # print('Energy_COMP=',Energy_COMP)
-        # print('Energy_sta=',Energy_sta)
-        # print('pro_time', pro_time)
+        # logger.info('Energy_DDR=',Energy_DDR)
+        # logger.info('Energy_BRAM=',Energy_BRAM)
+        # logger.info('Energy_COMP=',Energy_COMP)
+        # logger.info('Energy_sta=',Energy_sta)
+        # logger.info('pro_time', pro_time)
 
-        # print('Energy per image(J)=',Energy)
+        # logger.info('Energy per image(J)=',Energy)
 
         Power = Energy / pro_time
-        # print('Power(W)=',Power)
+        # logger.info('Power(W)=',Power)
 
         return Power
 
@@ -708,20 +708,20 @@ class evaluation_function:
 
         Bandwidth_req = max(Bandwidth_req_L)
 
-        # print('Bandwidth_req(Gb/s)=',Bandwidth_req)
-        # print('datain=',datain)
-        # print('dataout=',dataout)
-        # print('dataweight=',dataweight)
+        # logger.info('Bandwidth_req(Gb/s)=',Bandwidth_req)
+        # logger.info('datain=',datain)
+        # logger.info('dataout=',dataout)
+        # logger.info('dataweight=',dataweight)
 
-        # print('Bandwidth_req_L=',Bandwidth_req_L)
-        # print('Bandwidth_BN_req_L=',Bandwidth_BN_req_L)
-        # print('Bandwidth_BN_cpt_L=',Bandwidth_cpt_req_L)
+        # logger.info('Bandwidth_req_L=',Bandwidth_req_L)
+        # logger.info('Bandwidth_BN_req_L=',Bandwidth_BN_req_L)
+        # logger.info('Bandwidth_BN_cpt_L=',Bandwidth_cpt_req_L)
         return Bandwidth_req
 
     def DSP(self):
         DSP_BN = 20
         DSP = self.PE_size**2 * self.PE_num + DSP_BN
-        # print('DSP=',DSP)
+        # logger.info('DSP=',DSP)
         return DSP
 
     def Gops(self):
@@ -744,8 +744,8 @@ class evaluation_function:
 
         Gop = op * 2 / 1e9
         Gops = op * 2 / 1e9 / pro_time
-        # print('Gop=',Gop)
-        # print('Gop/s=',Gops)
+        # logger.info('Gop=',Gop)
+        # logger.info('Gop/s=',Gops)
 
         return Gops
 
@@ -804,9 +804,9 @@ class evaluation_function:
         Energy_sta = self.P_sta * pro_time
         Energy = Energy_DDR + Energy_BRAM + Energy_COMP + Energy_BN + Energy_sta
 
-        # print('Energy_DDR=',Energy_DDR)
-        # print('Energy_BRAM=',Energy_BRAM)
-        # print('Energy_COMP=',Energy_COMP)
-        # print('Energy per image(J)=',Energy)
+        # logger.info('Energy_DDR=',Energy_DDR)
+        # logger.info('Energy_BRAM=',Energy_BRAM)
+        # logger.info('Energy_COMP=',Energy_COMP)
+        # logger.info('Energy per image(J)=',Energy)
 
         return Energy

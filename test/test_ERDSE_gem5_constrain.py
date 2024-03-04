@@ -157,8 +157,8 @@ class RLDSE:
 
         period_bound = self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND
         for period in range(period_bound):
-            print(f"period:{period}", end="\r")
-            print(period)
+            logger.info(f"period:{period}", end="\r")
+            logger.info(period)
             # here may need a initial function for action_space
             self.DSE_action_space.status_reset()
 
@@ -217,7 +217,7 @@ class RLDSE:
                         objectvalue = runtime
                         objectvalue2 = power
                         objectvalue3 = energy
-                        print(reward, self.constraints.get_punishment())
+                        logger.info(reward, self.constraints.get_punishment())
                     else:
                         reward = 0
                     #### recording
@@ -229,7 +229,7 @@ class RLDSE:
                             and self.constraints.is_all_meet()
                         ):
                             self.best_objectvalue = objectvalue
-                            # print(f"best_status:{objectvalue, objectvalue2, power, DSP, BW, BRAM}")
+                            # logger.info(f"best_status:{objectvalue, objectvalue2, power, DSP, BW, BRAM}")
                         if self.constraints.is_all_meet():
                             self.all_objectvalue.append(objectvalue)
                             self.all_objectvalue2.append(objectvalue2)
@@ -240,7 +240,7 @@ class RLDSE:
                         self.objectvalue_list.append(reward)
                         self.objectvalue_list2.append(reward2)
                         self.power_list.append(power)
-                        print(f"{period}\t{reward}", end="\n", file=reward_log)
+                        logger.info(f"{period}\t{reward}", end="\n", file=reward_log)
 
                 reward_list.append(reward)
 
@@ -325,15 +325,15 @@ class RLDSE:
                     sample_loss = sample_loss / T
                     loss = loss + sample_loss
                 loss = loss / self.BATCH_SIZE
-                # print(loss)
+                # logger.info(loss)
 
-                # print(f"loss:{loss}")
+                # logger.info(f"loss:{loss}")
                 self.worksheet.write(int(period / self.BATCH_SIZE) + 1, 2, loss.item())
                 self.policy_optimizer.zero_grad()
                 loss.backward()
                 self.policy_optimizer.step()
             else:
-                print("no avaiable sample")
+                logger.info("no avaiable sample")
 
         # end for-period
         self.workbook.save("record/new_reward&return/RLDSE_reward_record_old.xls")
@@ -349,7 +349,7 @@ class RLDSE:
             # self.fruntime, t_L = self.evaluation.runtime()
             # self.fruntime = self.fruntime * 1000
             # self.fpower = self.evaluation.power()
-            # print(
+            # logger.info(
             # 	"\n@@@@  TEST  @@@@\n",
             # 	"final_status\n", self.fstatus,
             # 	"\nfinal_runtime\n", self.fruntime,
@@ -360,10 +360,10 @@ class RLDSE:
 
 
 def run(iindex):
-    print(f"%%%%TEST{iindex} START%%%%")
+    logger.info(f"%%%%TEST{iindex} START%%%%")
 
     DSE = RLDSE(iindex)
-    print(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
+    logger.info(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
     DSE.train()
     DSE.test()
 
@@ -400,9 +400,9 @@ def run(iindex):
 		if(reward >= 10): high_value_reward += 1
 	high_value_reward_proportion = high_value_reward/len(DSE.reward_array)
 	hfile = open("high_value_reward_proportion_"+str(iindex)+".txt", "w")
-	print(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
+	logger.info(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
 	"""
-    print(f"%%%%TEST{iindex} END%%%%")
+    logger.info(f"%%%%TEST{iindex} END%%%%")
 
 
 if __name__ == "__main__":

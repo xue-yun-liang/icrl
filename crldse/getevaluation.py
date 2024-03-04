@@ -7,9 +7,11 @@ import types
 import math
 import subprocess as subp
 from optparse import OptionParser
+from logger import Logger
+
 
 mcpat_bin = "mcpat"
-
+logger = Logger.get_logger()
 
 class parse_node:
     def __init__(this, key=None, value=None, indent=0):
@@ -19,7 +21,7 @@ class parse_node:
         this.leaves = []
 
     def append(this, n):
-        # print 'adding parse_node: ' + str(n) + ' to ' + this.__str__()
+        # logger.info 'adding parse_node: ' + str(n) + ' to ' + this.__str__()
         this.leaves.append(n)
 
     def get_tree(this, indent):
@@ -29,14 +31,14 @@ class parse_node:
         return me + "\n" + "".join(kids)
 
     def getValue(this, key_list):
-        # print 'key_list: ' + str(key_list)
+        # logger.info 'key_list: ' + str(key_list)
         if this.key == key_list[0]:
-            # print 'success'
+            # logger.info 'success'
             if len(key_list) == 1:
                 return this.value
             else:
                 kids = list(map(lambda x: x.getValue(key_list[1:]), this.leaves))
-                # print 'kids: ' + str(kids)
+                # logger.info 'kids: ' + str(kids)
                 return "".join(kids)
         return ""
 
@@ -48,7 +50,7 @@ class parser:
 
     def dprint(this, astr):
         if this.debug:
-            print(this.name, astr)
+            logger.info(this.name, astr)
 
     def __init__(this, data_in):
         this.debug = False
@@ -70,7 +72,7 @@ class parser:
             branch = trunk[-1]
 
             if useless:
-                # this.dprint('useless')
+                # this.dlogger.info('useless')
                 pass
 
             elif equal:
@@ -79,18 +81,18 @@ class parser:
                 n = parse_node(key=items[0], value=items[1], indent=indent)
                 branch.append(n)
 
-                this.dprint("new parse_node: " + str(n))
+                this.dlogger.info("new parse_node: " + str(n))
 
             else:
 
                 while indent <= branch.indent:
-                    this.dprint(
+                    this.dlogger.info(
                         "poping branch: i: " + str(indent) + " r: " + str(branch.indent)
                     )
                     trunk.pop()
                     branch = trunk[-1]
 
-                this.dprint("adding new leaf to " + str(branch))
+                this.dlogger.info("adding new leaf to " + str(branch))
                 n = parse_node(key=items[0], value=None, indent=indent)
                 branch.append(n)
                 trunk.append(n)
@@ -115,7 +117,7 @@ def getevaluation(index_1_mcpat, index_2_gem5):
         "power": power,
     }
 
-    print("energy is %f mJ" % energy)
+    logger.info("energy is %f mJ" % energy)
     return metrics
 
 
@@ -123,7 +125,7 @@ def getEnergy(mcpatoutputFile, statsFile):
     leakage, dynamic, Aera = readMcPAT(mcpatoutputFile)
     runtime = getTimefromStats(statsFile)
     energy = (leakage + dynamic) * runtime
-    print(
+    logger.info(
         "leakage: %f W, dynamic: %f W ,Aera: %f mm^2 and runtime: %f sec"
         % (leakage, dynamic, Aera, runtime)
     )
@@ -132,7 +134,7 @@ def getEnergy(mcpatoutputFile, statsFile):
 
 
 def readMcPAT(mcpatoutputFile):
-    print("Reading simulation time from: %s" % mcpatoutputFile)
+    logger.info("Reading simulation time from: %s" % mcpatoutputFile)
     p = parser(mcpatoutputFile)
 
     leakage = p.getValue(["Processor:", "Total Leakage"])
@@ -146,7 +148,7 @@ def readMcPAT(mcpatoutputFile):
 
 
 def getTimefromStats(statsFile):
-    print("Reading simulation time from: %s" % statsFile)
+    logger.info("Reading simulation time from: %s" % statsFile)
     F = open(statsFile)
     ignores = re.compile(r"^---|^$")
     statLine = re.compile(r"([a-zA-Z0-9_\.:+-]+)\s+([-+]?[0-9]+\.[0-9]+|[0-9]+|nan)")

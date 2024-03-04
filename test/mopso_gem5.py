@@ -1,8 +1,8 @@
 # encoding: utf-8
 import numpy as np
 import xlwt
-from Mopso import *
-from config import my_test_config
+from mopso import *
+from crldse.config import my_test_config
 
 config = my_test_config()
 # nnmodel = config.nnmodel
@@ -69,9 +69,9 @@ def main():
     np.savetxt(
         "./img_txt/pareto_fitness.txt", pareto_fitness
     )  # 打印pareto边界粒子的适应值
-    print("\n", "pareto边界的坐标保存于：/img_txt/pareto_in.txt")
-    print("pareto边界的适应值保存于：/img_txt/pareto_fitness.txt")
-    print("\n,迭代结束,over")
+    logger.info("\n", "pareto边界的坐标保存于：/img_txt/pareto_in.txt")
+    logger.info("pareto边界的适应值保存于：/img_txt/pareto_fitness.txt")
+    logger.info("\n,迭代结束,over")
 
 
 if __name__ == "__main__":
