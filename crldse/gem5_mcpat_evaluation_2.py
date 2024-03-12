@@ -1,10 +1,10 @@
-from subprocess import Popen, PIPE
-from getevaluation import getevaluation
-from logger import Logger
 import time
 import os
 import math
-import subprocess
+
+from subprocess import Popen
+from getevaluation import getevaluation
+from logger import Logger
 
 logger = Logger.get_logger()
 

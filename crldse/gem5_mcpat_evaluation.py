@@ -1,12 +1,10 @@
-from subprocess import Popen, PIPE
-from getevaluation import getevaluation
-from logger import Logger
 import time
 import os
 import math
-import logging
-import subprocess
+from subprocess import Popen
 
+from getevaluation import getevaluation
+from logger import Logger
 
 def evaluation(status):
     # init logger

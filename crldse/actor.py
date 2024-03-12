@@ -1,12 +1,15 @@
+import random
+import math
+import pdb
+
+import numpy
+import torch
+
 from space import dimension_discrete
 from space import design_space
 from evaluation import evaluation_function
 
-import random
-import math
-import numpy
-import torch
-import pdb
+
 
 def status_normalize(status, design_space):
 	# status: , design_space: -> dict

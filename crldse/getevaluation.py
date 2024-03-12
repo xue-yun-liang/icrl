@@ -1,10 +1,10 @@
-#!/usr/bin/python
 import sys
 import re
 import os
 import json
 import types
 import math
+
 import subprocess as subp
 from optparse import OptionParser
 from logger import Logger
