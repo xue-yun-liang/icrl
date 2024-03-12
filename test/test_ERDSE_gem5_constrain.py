@@ -157,8 +157,8 @@ class RLDSE:
 
         period_bound = self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND
         for period in range(period_bound):
-            logger.info(f"period:{period}", end="\r")
-            logger.info(period)
+            print(f"period:{period}", end="\r")
+            print(period)
             # here may need a initial function for action_space
             self.DSE_action_space.status_reset()
 
@@ -217,7 +217,7 @@ class RLDSE:
                         objectvalue = runtime
                         objectvalue2 = power
                         objectvalue3 = energy
-                        logger.info(reward, self.constraints.get_punishment())
+                        print(reward, self.constraints.get_punishment())
                     else:
                         reward = 0
                     #### recording
@@ -240,7 +240,7 @@ class RLDSE:
                         self.objectvalue_list.append(reward)
                         self.objectvalue_list2.append(reward2)
                         self.power_list.append(power)
-                        logger.info(f"{period}\t{reward}", end="\n", file=reward_log)
+                        print(f"{period}\t{reward}", end="\n", file=reward_log)
 
                 reward_list.append(reward)
 
@@ -333,7 +333,7 @@ class RLDSE:
                 loss.backward()
                 self.policy_optimizer.step()
             else:
-                logger.info("no avaiable sample")
+                print("no avaiable sample")
 
         # end for-period
         self.workbook.save("record/new_reward&return/RLDSE_reward_record_old.xls")
@@ -360,10 +360,10 @@ class RLDSE:
 
 
 def run(iindex):
-    logger.info(f"%%%%TEST{iindex} START%%%%")
+    print(f"%%%%TEST{iindex} START%%%%")
 
     DSE = RLDSE(iindex)
-    logger.info(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
+    print(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
     DSE.train()
     DSE.test()
 
@@ -402,7 +402,7 @@ def run(iindex):
 	hfile = open("high_value_reward_proportion_"+str(iindex)+".txt", "w")
 	logger.info(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
 	"""
-    logger.info(f"%%%%TEST{iindex} END%%%%")
+    print(f"%%%%TEST{iindex} END%%%%")
 
 
 if __name__ == "__main__":

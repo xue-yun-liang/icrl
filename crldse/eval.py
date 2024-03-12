@@ -4,14 +4,14 @@ import os
 import json
 import types
 import math
-
 import subprocess as subp
 from optparse import OptionParser
-from logger import Logger
 
+from crldse.logger import Logger
 
-mcpat_bin = "mcpat"
 logger = Logger.get_logger()
+mcpat_bin = "mcpat"
+
 
 class parse_node:
     def __init__(this, key=None, value=None, indent=0):
@@ -20,95 +20,97 @@ class parse_node:
         this.indent = indent
         this.leaves = []
 
+    def __str__(this):
+        return "key: " + str(this.key) + " value: " + str(this.value)
+
     def append(this, n):
-        # logger.info 'adding parse_node: ' + str(n) + ' to ' + this.__str__()
         this.leaves.append(n)
 
-    def get_tree(this, indent):
+    def tree(this, indent):
         padding = " " * indent * 2
         me = padding + this.__str__()
         kids = list(map(lambda x: x.get_tree(indent + 1), this.leaves))
         return me + "\n" + "".join(kids)
 
-    def getValue(this, key_list):
-        # logger.info 'key_list: ' + str(key_list)
+    def value(this, key_list):
         if this.key == key_list[0]:
-            # logger.info 'success'
             if len(key_list) == 1:
                 return this.value
             else:
-                kids = list(map(lambda x: x.getValue(key_list[1:]), this.leaves))
-                # logger.info 'kids: ' + str(kids)
+                kids = list(map(lambda x: x.get_value(key_list[1:]), this.leaves))
                 return "".join(kids)
         return ""
 
-    def __str__(this):
-        return "k: " + str(this.key) + " v: " + str(this.value)
-
 
 class parser:
-
-    def dprint(this, astr):
-        if this.debug:
-            logger.info(this.name, astr)
-
-    def __init__(this, data_in):
+    def __init__(this, file):
         this.debug = False
         this.name = "mcpat:mcpat_parse"
 
-        buf = open(data_in)
+        buf = open(file)
 
         this.root = parse_node("root", None, -1)
         trunk = [this.root]
 
         for line in buf:
-
             indent = len(line) - len(line.lstrip())
             equal = "=" in line
             colon = ":" in line
             useless = not equal and not colon
             items = list(map(lambda x: x.strip(), line.split("=")))
-
             branch = trunk[-1]
 
             if useless:
-                # this.dlogger.info('useless')
                 pass
-
             elif equal:
                 assert len(items) > 1
-
                 n = parse_node(key=items[0], value=items[1], indent=indent)
                 branch.append(n)
-
                 this.dlogger.info("new parse_node: " + str(n))
-
             else:
-
                 while indent <= branch.indent:
-                    this.dlogger.info(
+                    this.print(
                         "poping branch: i: " + str(indent) + " r: " + str(branch.indent)
                     )
                     trunk.pop()
                     branch = trunk[-1]
-
-                this.dlogger.info("adding new leaf to " + str(branch))
+                this.print("adding new leaf to " + str(branch))
                 n = parse_node(key=items[0], value=None, indent=indent)
                 branch.append(n)
                 trunk.append(n)
 
+    def print(this, astr):
+        """print the file's name"""
+        if this.debug:
+            print(this.name, astr)
+
     def get_tree(this):
         return this.root.get_tree(0)
 
-    def getValue(this, key_list):
+    def get_value(this, key_list):
         value = this.root.getValue(["root"] + key_list)
         assert value != ""
         return value
 
 
-# runs McPAT and gives you the total energy in mJs
-def getevaluation(index_1_mcpat, index_2_gem5):
-    energy, runtime, Aera, power = getEnergy(index_1_mcpat, index_2_gem5)
+def read_mcpat(mcpatOutputFile):
+    """parse the mcpat output file"""
+    print("Reading simulation time from: %s" % mcpatOutputFile)
+    p = parser(mcpatOutputFile)
+
+    leakage = p.get_value(["Processor:", "Total Leakage"])
+    dynamic = p.get_value(["Processor:", "Runtime Dynamic"])
+    Aera = p.get_value(["Processor:", "Area"])
+    leakage = re.sub(" W", "", leakage)
+    dynamic = re.sub(" W", "", dynamic)
+    Aera = re.sub("m", "", Aera)
+    Aera = Aera[:-4]
+    return (float(leakage), float(dynamic), float(Aera))
+
+
+def get_evaluation(index_1_mcpat, index_2_gem5):
+    """runs McPAT, return the total energy in mJs"""
+    energy, runtime, Aera, power = get_energy(index_1_mcpat, index_2_gem5)
 
     metrics = {
         "latency": runtime,  # unit: sec
@@ -121,11 +123,11 @@ def getevaluation(index_1_mcpat, index_2_gem5):
     return metrics
 
 
-def getEnergy(mcpatoutputFile, statsFile):
-    leakage, dynamic, Aera = readMcPAT(mcpatoutputFile)
-    runtime = getTimefromStats(statsFile)
+def get_energy(mcpatoutputFile, statsFile):
+    leakage, dynamic, Aera = read_mcpat(mcpatoutputFile)
+    runtime = get_time_from_stats(statsFile)
     energy = (leakage + dynamic) * runtime
-    logger.info(
+    print(
         "leakage: %f W, dynamic: %f W ,Aera: %f mm^2 and runtime: %f sec"
         % (leakage, dynamic, Aera, runtime)
     )
@@ -133,33 +135,19 @@ def getEnergy(mcpatoutputFile, statsFile):
     return energy * 1000, runtime, Aera, (leakage + dynamic)
 
 
-def readMcPAT(mcpatoutputFile):
-    logger.info("Reading simulation time from: %s" % mcpatoutputFile)
-    p = parser(mcpatoutputFile)
-
-    leakage = p.getValue(["Processor:", "Total Leakage"])
-    dynamic = p.getValue(["Processor:", "Runtime Dynamic"])
-    Aera = p.getValue(["Processor:", "Area"])
-    leakage = re.sub(" W", "", leakage)
-    dynamic = re.sub(" W", "", dynamic)
-    Aera = re.sub("m", "", Aera)
-    Aera = Aera[:-4]
-    return (float(leakage), float(dynamic), float(Aera))
-
-
-def getTimefromStats(statsFile):
-    logger.info("Reading simulation time from: %s" % statsFile)
-    F = open(statsFile)
+def get_time_from_stats(stats_file):
+    print("Reading simulation time from: %s" % stats_file)
+    F = open(stats_file)
     ignores = re.compile(r"^---|^$")
-    statLine = re.compile(r"([a-zA-Z0-9_\.:+-]+)\s+([-+]?[0-9]+\.[0-9]+|[0-9]+|nan)")
-    retVal = None
+    stat_line = re.compile(r"([a-zA-Z0-9_\.:+-]+)\s+([-+]?[0-9]+\.[0-9]+|[0-9]+|nan)")
+    ret_val = None
     for line in F:
         # ignore empty lines and lines starting with "---"
         if not ignores.match(line):
-            statKind = statLine.match(line).group(1)
-            statValue = statLine.match(line).group(2)
-            if statKind == "simSeconds":
-                retVal = float(statValue)
+            stat_kind = stat_line.match(line).group(1)
+            stat_value = stat_line.match(line).group(2)
+            if stat_kind == "simSeconds":
+                ret_val = float(stat_value)
                 break  # no need to parse the whole file once the requested value has been found
     F.close()
-    return retVal
+    return ret_val

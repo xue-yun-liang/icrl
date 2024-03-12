@@ -3,13 +3,14 @@ import os
 import math
 from subprocess import Popen
 
-from getevaluation import getevaluation
+from crldse.eval import get_evaluation
 from logger import Logger
+
 
 def evaluation(status):
     # init logger
     logger = Logger.get_logger()
-    
+
     # just accpet a param "stats":dict()
     # return the evaluation metris:dict()
 
@@ -129,7 +130,9 @@ def evaluation(status):
             # "/parsec-tests2/gem5_2/gem5/m5out/3.txt"]
             # process4 = Popen(command_4)
             # process4.wait()
-            metrics = getevaluation(
+
+            # the trule eval step
+            metrics = get_evaluation(
                 "/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log", "/m5out/3.txt"
             )
             logger.info(bar, "END logger.info ENERGY", bar)

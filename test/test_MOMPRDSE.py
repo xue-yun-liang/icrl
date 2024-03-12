@@ -1,7 +1,6 @@
 from crldse.space import dimension_discrete
 from crldse.space import design_space
-from crldse.space import create_space_gem5
-from crldse.space import tsne3D
+from crldse.space import create_space_crldse
 from crldse.actor import actor_policyfunction, get_log_prob
 from crldse.evaluation import evaluation_function
 from crldse.config import my_test_config
@@ -21,7 +20,6 @@ debug = False
 
 weight_power = 0.9
 weight_runtime = 0.1
-
 
 class mlp_policyfunction(torch.nn.Module):
     def __init__(self, space_lenth, action_scale_list):
@@ -80,7 +78,7 @@ class RLDSE:
         self.worksheet.write(0, 2, "loss")
 
         ## initial DSE_action_space
-        self.DSE_action_space = create_space_gem5()
+        self.DSE_action_space = create_space_crldse()
 
         # define the hyperparameters
         self.PERIOD_BOUND = 500
@@ -202,7 +200,7 @@ class RLDSE:
         self.fillter_list = list()
 
     def train_fillter(self, fillter, obs_list, reward_list):
-        logger.info(
+        print(
             f"**************  Training the fillter, now we have {len(obs_list)} samples   ******************"
         )
         data_size = len(obs_list)
@@ -216,7 +214,7 @@ class RLDSE:
         reward_list_back.sort()
         self.best_reward = max(reward_list)
         self.low_reward = reward_list_back[int(0.7 * data_size)]
-        logger.info(
+        print(
             f"***************   refuse_reward = {self.low_reward}, best_reward = {self.best_reward}     ******************"
         )
         for reward in reward_list:
@@ -241,7 +239,7 @@ class RLDSE:
             predict = fillter(data)
             loss = loss_function(predict, target)
             if epoch % 200 == 0:
-                logger.info(f"loss:{loss}")
+                print(f"loss:{loss}")
 
             temp_optimizer.zero_grad()
             loss.backward()
@@ -265,7 +263,7 @@ class RLDSE:
         for i, j, d, r in zip(t_predict, t_target, data, reward):
             if i != j:
                 error += 1
-        logger.info(
+        print(
             f"************      accucy = {1 - error / len(test_range)}    ***************"
         )
 
@@ -285,8 +283,8 @@ class RLDSE:
         period = 0
         period_bound = self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND
         while period < self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND:
-            logger.info(period)
-            logger.info(f"period:{period}", end="\r")
+            print(period)
+            print(f"period:{period}", end="\r")
             # here may need a initial function for action_space
             self.DSE_action_space.status_reset()
 
@@ -346,13 +344,13 @@ class RLDSE:
                     reward_list.append(reward)
                     reward2_list.append(reward2)
                     reward3_list.append(reward3)
-            logger.info(f"policy:{signol}")
+            print(f"policy:{signol}")
             self.fillter_train_flag = (
                 (period - self.SAMPLE_PERIOD_BOUND) % 50 == 0
             ) and (period - self.SAMPLE_PERIOD_BOUND != 0)
 
             if period >= self.SAMPLE_PERIOD_BOUND and self.fillter_train_flag:
-                logger.info(f"**************  Training the fillter 1    ******************")
+                print(f"**************  Training the fillter 1    ******************")
                 self.train_fillter(
                     self.fillter, self.fillter_obs_buffer, self.fillter_reward_buffer
                 )
@@ -362,7 +360,7 @@ class RLDSE:
             predict = self.fillter(t_obs)
 
             if period >= self.SAMPLE_PERIOD_BOUND and self.fillter_train_flag:
-                logger.info(f"**************  Training the fillter 2    ******************")
+                print(f"**************  Training the fillter 2    ******************")
                 self.train_fillter(
                     self.fillter2, self.fillter_obs_buffer2, self.fillter_reward_buffer2
                 )
@@ -372,7 +370,7 @@ class RLDSE:
             predict2 = self.fillter2(t_obs)
 
             if period >= self.SAMPLE_PERIOD_BOUND and self.fillter_train_flag:
-                logger.info(f"**************  Training the fillter 3    ******************")
+                print(f"**************  Training the fillter 3    ******************")
                 self.train_fillter(
                     self.fillter3, self.fillter_obs_buffer3, self.fillter_reward_buffer3
                 )
@@ -421,7 +419,7 @@ class RLDSE:
                     self.stack_record = 0
 
             if next_status in self.fillter_list:
-                logger.info("already in fillter_list")
+                print("already in fillter_list")
                 continue
             else:
                 self.fillter_list.append(next_status)
@@ -447,7 +445,7 @@ class RLDSE:
             else:
                 reward_runtime = 0
                 reward_power = 0
-            logger.info(reward_runtime, reward_power)
+            print(reward_runtime, reward_power)
 
             reward = reward_runtime
 
@@ -486,7 +484,7 @@ class RLDSE:
                 self.objectvalue_list.append(reward)
                 self.objectvalue_list2.append(reward2)
                 self.power_list.append(power)
-                logger.info(f"{period}\t{reward}", end="\n", file=reward_log)
+                print(f"{period}\t{reward}", end="\n", file=reward_log)
 
             reward_list.append(reward)
             reward2_list.append(reward2)
@@ -706,11 +704,11 @@ class RLDSE:
                 # logger.info("loss3:", loss3)
 
             else:
-                logger.info("no avaiable sample")
+               print("no avaiable sample")
             period = period + 1
         # end for-period
         self.workbook.save("record/new_reward&return/RLDSE_reward_record_old.xls")
-        logger.info(f"stack_renew {stack_renew}")
+        print(f"stack_renew {stack_renew}")
 
     def test(self):
         pass
@@ -734,10 +732,10 @@ class RLDSE:
 
 
 def run(iindex):
-    logger.info(f"%%%%TEST{iindex} START%%%%")
+    print(f"%%%%TEST{iindex} START%%%%")
 
     DSE = RLDSE(iindex)
-    logger.info(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
+    print(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
     DSE.train()
     DSE.test()
 
@@ -810,7 +808,7 @@ def run(iindex):
 	hfile = open("high_value_reward_proportion_"+str(iindex)+".txt", "w")
 	logger.info(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
 	"""
-    logger.info(f"%%%%TEST{iindex} END%%%%")
+    print(f"%%%%TEST{iindex} END%%%%")
 
 
 if __name__ == "__main__":

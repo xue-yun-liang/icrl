@@ -32,7 +32,7 @@ class dimension_discrete:
         self.current_value = default_value
         self.step = step
         self.frozen = frozen
-        self.model = model
+        self.model = model # what's mean model
 
         assert rrange[0] <= rrange[-1]
         self.rrange = rrange
@@ -103,10 +103,8 @@ class dimension_discrete:
         logger.info(self.sample_box)
         return
 
-    #### new function 2021/07/26
     def get_norm_current_value(self):
         return self.get_current_value() / self.get_range_upbound()
-
 
 class design_space:
     def __init__(self):
@@ -214,7 +212,6 @@ class design_space:
         obs = numpy.array(obs_list)
         # obs = torch.from_numpy(obs)
         return obs
-
 
 def create_space_erdse(layer_num):
     DSE_action_space = design_space()
@@ -328,8 +325,6 @@ def create_space_erdse(layer_num):
 
     return DSE_action_space
 
-
-###################### lijianfei_gem5 #######################
 def create_space_crldse():
     DSE_action_space = design_space()
     num_param = 0.5
@@ -415,9 +410,7 @@ def create_space_crldse():
 
     return DSE_action_space
 
-
-
-class environment:
+class environment_erdse:
 
     def __init__(
         self,
@@ -459,9 +452,9 @@ class environment:
             + str(self.nlabel)
         )
         self.result_log = open(log_name, "w")
-        logger.info(f"Period\tResult", end="\n", file=self.result_log)
+        print(f"Period\tResult", end="\n", file=self.result_log)
 
-        self.design_space = create_space(self.layer_num)
+        self.design_space = create_space_erdse(self.layer_num)
 
         self.design_space_dimension = self.design_space.get_lenth()
         self.action_dimension_list = list()
@@ -589,37 +582,3 @@ class environment:
         pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
         pi[idx] = 1
         return pi
-
-
-# def tsne3D(vector_list, reward_list, method):
-#     from sklearn import manifold
-#     action_array = np.array(vector_list)
-#     reward_continue_array = np.array(reward_list)
-
-#     tsne = manifold.TSNE(n_components=2, init="pca", random_state=501)
-#     logger.info(f"Start to load t-SNE")
-#     x_tsne = tsne.fit_transform(action_array)
-
-#     x_min, x_max = x_tsne.min(0), x_tsne.max(0)
-#     x_norm = (x_tsne - x_min) / (x_max - x_min)
-#     # pdb.set_trace()
-
-#     fig_3D = plt.figure()
-#     tSNE_3D = plt.axes(projection="3d")
-#     tSNE_3D.scatter3D(
-#         x_norm[:, 0],
-#         x_norm[:, 1],
-#         reward_continue_array,
-#         c=reward_continue_array,
-#         vmax=20,
-#         cmap="rainbow",
-#         alpha=0.5,
-#     )
-#     # tSNE_3D.scatter3D(x_norm[:, 0], x_norm[:, 1], reward_continue_array, c = reward_continue_array, cmap = "rainbow", alpha = 0.5)
-#     tSNE_3D.set_xlabel("x")
-#     tSNE_3D.set_ylabel("y")
-#     tSNE_3D.set_zlabel("Reward")
-#     tSNE_3D.set_zlim((0, 20))
-#     tSNE_3D.set_zticks([0, 5, 10, 15, 20])
-#     fname = method + "_" + "tSEN_3D" + ".png"
-#     fig_3D.savefig(fname, format="png")

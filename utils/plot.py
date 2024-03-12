@@ -18,7 +18,7 @@ class Plot_pareto:
                 [self.y1[i,j],self.y2[i,j]] = fit.fitness_([self.x1[i,j],self.x2[i,j]])
         if os.path.exists('./img_txt') == False:
             os.makedirs('./img_txt')
-            logger.info ('创建文件夹img_txt:保存粒子群每一次迭代的图片')
+            print ('创建文件夹img_txt:保存粒子群每一次迭代的图片')
     def show(self,in_,fitness_,archive_in,archive_fitness,i):
         #共3个子图，第1、2/子图绘制输入坐标与适应值关系，第3图展示pareto边界的形成过程
         fig = plt.figure('第'+str(i+1)+'次迭代',figsize = (17,5))
@@ -46,5 +46,38 @@ class Plot_pareto:
         ax3.scatter(archive_fitness[:,0],archive_fitness[:,1],s=30, c='red', marker=".",alpha = 1.0)
         #plt.show()
         plt.savefig('./img_txt/'+str(i+1)+'.png')
-        logger.info ('第'+str(i+1)+'次迭代的图片保存于 img_txt 文件夹')
+        print ('第'+str(i+1)+'次迭代的图片保存于 img_txt 文件夹')
         plt.close()
+
+def tsne3D(vector_list, reward_list, method):
+    from sklearn import manifold
+    action_array = np.array(vector_list)
+    reward_continue_array = np.array(reward_list)
+
+    tsne = manifold.TSNE(n_components=2, init="pca", random_state=501)
+    print(f"Start to load t-SNE")
+    x_tsne = tsne.fit_transform(action_array)
+
+    x_min, x_max = x_tsne.min(0), x_tsne.max(0)
+    x_norm = (x_tsne - x_min) / (x_max - x_min)
+    # pdb.set_trace()
+
+    fig_3D = plt.figure()
+    tSNE_3D = plt.axes(projection="3d")
+    tSNE_3D.scatter3D(
+        x_norm[:, 0],
+        x_norm[:, 1],
+        reward_continue_array,
+        c=reward_continue_array,
+        vmax=20,
+        cmap="rainbow",
+        alpha=0.5,
+    )
+    # tSNE_3D.scatter3D(x_norm[:, 0], x_norm[:, 1], reward_continue_array, c = reward_continue_array, cmap = "rainbow", alpha = 0.5)
+    tSNE_3D.set_xlabel("x")
+    tSNE_3D.set_ylabel("y")
+    tSNE_3D.set_zlabel("Reward")
+    tSNE_3D.set_zlim((0, 20))
+    tSNE_3D.set_zticks([0, 5, 10, 15, 20])
+    fname = method + "_" + "tSEN_3D" + ".png"
+    fig_3D.savefig(fname, format="png")

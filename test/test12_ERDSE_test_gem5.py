@@ -1,18 +1,17 @@
-from crldse.space import dimension_discrete
-from crldse.space import design_space
-from crldse.space import create_space_gem5
-from crldse.space import tsne3D
-from crldse.actor import actor_policyfunction, get_log_prob
-from crldse.evaluation import evaluation_function
-from crldse.config import my_test_config_2
-from multiprocessing import Pool
-from crldse.gem5_mcpat_evaluation import evaluation
 import torch
 import random
 import numpy
 import pdb
 import copy
 import xlwt
+from multiprocessing import Pool
+
+from crldse.space import create_space_erdse
+from crldse.actor import actor_policyfunction, get_log_prob
+from crldse.evaluation import evaluation_function
+from crldse.config import my_test_config_2
+from crldse.gem5_mcpat_evaluation import evaluation
+
 
 debug = False
 
@@ -73,7 +72,7 @@ class RLDSE:
         self.worksheet.write(0, 2, "loss")
 
         ## initial DSE_action_space
-        self.DSE_action_space = create_space_gem5()
+        self.DSE_action_space = create_space_erdse()
 
         # define the hyperparameters
         self.PERIOD_BOUND = 500
@@ -157,8 +156,8 @@ class RLDSE:
 
         period_bound = self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND
         for period in range(period_bound):
-            logger.info(f"period:{period}", end="\r")
-            logger.info(period)
+            print(f"period:{period}", end="\r")
+            print(period)
             # here may need a initial function for action_space
             self.DSE_action_space.status_reset()
 
@@ -216,7 +215,7 @@ class RLDSE:
                         objectvalue = runtime
                         objectvalue2 = power
                         objectvalue3 = energy
-                        logger.info(reward, self.constraints.get_punishment())
+                        print(reward, self.constraints.get_punishment())
                     else:
                         reward = 0
                     #### recording
@@ -239,7 +238,7 @@ class RLDSE:
                         self.objectvalue_list.append(reward)
                         self.objectvalue_list2.append(reward2)
                         self.power_list.append(power)
-                        logger.info(f"{period}\t{reward}", end="\n", file=reward_log)
+                        print(f"{period}\t{reward}", end="\n", file=reward_log)
 
                 reward_list.append(reward)
 
@@ -332,7 +331,7 @@ class RLDSE:
                 loss.backward()
                 self.policy_optimizer.step()
             else:
-                logger.info("no avaiable sample")
+                print("no avaiable sample")
 
         # end for-period
         self.workbook.save("record/new_reward&return/RLDSE_reward_record_old.xls")
@@ -359,10 +358,10 @@ class RLDSE:
 
 
 def run(iindex):
-    logger.info(f"%%%%TEST{iindex} START%%%%")
+    print(f"%%%%TEST{iindex} START%%%%")
 
     DSE = RLDSE(iindex)
-    logger.info(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
+    print(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
     DSE.train()
     DSE.test()
 
@@ -401,7 +400,7 @@ def run(iindex):
 	hfile = open("high_value_reward_proportion_"+str(iindex)+".txt", "w")
 	logger.info(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
 	"""
-    logger.info(f"%%%%TEST{iindex} END%%%%")
+    print(f"%%%%TEST{iindex} END%%%%")
 
 
 if __name__ == "__main__":

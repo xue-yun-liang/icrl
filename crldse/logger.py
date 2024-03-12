@@ -1,6 +1,6 @@
 import logging
 
-class Logger:
+class logger:
     _instance = None
     
     def __new__(cls, *args, **kwargs):

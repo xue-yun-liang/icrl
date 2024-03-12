@@ -129,7 +129,7 @@ def get_kldivloss_and_log_prob(policyfunction, design_space, status, action_inde
 	model = design_space.get_dimension_model(dimension_index)
 	if(model["name"] == "normal"):
 		target_distribution = get_normal_tensor(design_space, action_index, dimension_index, model["param"]).float()
-		if(dimension_index == 2): logger.info(f"normal: target_distribution{target_distribution}")	
+		if(dimension_index == 2): print(f"normal: target_distribution{target_distribution}")	
 	elif(model["name"] == "one_hot"):
 		target_distribution = index_to_one_hot(len(probs), action_index)
 	kldivloss = torch.nn.functional.kl_div(probs.log(), target_distribution, reduction = "sum")
