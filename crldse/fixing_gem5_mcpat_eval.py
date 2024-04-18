@@ -7,7 +7,7 @@ from crldse.eval import get_evaluation
 from logger import logger
 
 logger = logger.get_logger()
-bar = "========================="
+bar = "------------------------------"
 
 # the eval process:
 # step1: Pass the design parameters of the state to gem5
