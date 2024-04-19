@@ -46,7 +46,14 @@ class MCPDseEnv(gym.Env):
     | 7   | sys_clock    | 2               | 0.1      | 2.0      |  4.0     |
 
     ### Rewards
-    # FIXME: add the reward 's compute logics
+    # the reward 's compute logics:
+    reward could be compute by constraints.get_punishment()
+    the equations is : R_{s_t} = \prod_{i=1}^{n} O_i(s_t) \prod_{j=1}^{m} (C_j)/(P_j(s_t))^{l_j}
+    where the O_i(s_t) is the performance indicator. e.g. the optimization goal "energy" or "latency"
+    where the P_j(s_t) is the constraint indicator. 
+    where the C_j is the constraint indicators.
+    
+    **Notes there is a hyperparams threshold_ratio, it as the l_j contorl the total reward
 
     ### Starting State
 
@@ -61,6 +68,8 @@ class MCPDseEnv(gym.Env):
     2. Termination:
 
     ### Arguments
+    
+    Nothing
 
     """
 
@@ -83,6 +92,7 @@ class MCPDseEnv(gym.Env):
 
         # set eval function
         self.evaluation = evaluation_function(self.target)
+        self.result = 0
 
     def step(self, step, act):
         # FIXME: fix the code here
@@ -96,7 +106,7 @@ class MCPDseEnv(gym.Env):
         current_status = self.design_space.get_status()
         next_status = self.design_space.sample_one_dimension(step, act)
         obs = self.design_space.get_obs()
-
+        
         if step < (self.design_space.get_length() - 1):
             done = False
         else:
@@ -113,13 +123,13 @@ class MCPDseEnv(gym.Env):
             # coumpute the reward
             if self.goal == "latency":
                 reward = 1000 / (runtime * self.constraints.get_punishment())
-                result = runtime
+                self.result = runtime
             elif self.goal == "energy":
                 reward = 1000 / (energy * self.constraints.get_punishment())
-                result = energy
+                self.result = energy
             elif self.goal == "latency&energy":
                 reward = 1000 / ((runtime * energy) * self.constraints.get_punishment())
-                result = runtime * energy
+                self.result = runtime * energy
 
         self.sample_time += 1
           
