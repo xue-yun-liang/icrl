@@ -1,7 +1,3 @@
-from logger import Logger
-
-logger = Logger.get_logger()
-
 class constraint:
     def __init__(self, name, threshold, threshold_ratio):
         self.name = name
@@ -13,7 +9,7 @@ class constraint:
         self.stable_margin = self.margin
         self.is_meet_flag = False
         self.l = 0
-        self.punishment = 0
+        self.punishment = 0     # reward factor
 
     def update(self, value):
         self.value = value
@@ -48,9 +44,10 @@ class constraint:
         return self.punishment
 
     def print(self):
-        print(
-            f"name = {self.name}, threshold = {self.threshold}, value = {self.value}, margin = {self.margin}, is_meet:{self.is_meet_flag}, punishment = {self.punishment}, stable_margin = {self.stable_margin}"
-        )
+        print(f"name = {self.name}, threshold = {self.threshold}, \
+            value = {self.value},margin = {self.margin}, \
+            is_meet:{self.is_meet_flag}, punishment = {self.punishment}, \
+            stable_margin = {self.stable_margin}")
 
 
 class constraints:
@@ -99,51 +96,14 @@ class constraints:
 
     def print(self):
         for constraint in self.constraint_list:
-            constraint.logger.info()
+            constraint.print()
 
 
 class test_config:
     def __init__(self, atype):
-        #### step1 define model
-        if atype == 0:
-            self.nnmodel, self.target = "VGG16", "cloud"
-        elif atype == 1:
-            self.nnmodel, self.target = "VGG16", "normal"
-        elif atype == 2:
-            self.nnmodel, self.target = "VGG16", "embed"
-        elif atype == 3:
-            self.nnmodel, self.target = "MobilenetV3", "cloud"
-        elif atype == 4:
-            self.nnmodel, self.target = "MobilenetV3", "normal"
-        elif atype == 5:
-            self.nnmodel, self.target = "MobilenetV3", "embed"
-
-        """
-		# self.nnmodel = "VGG16"
-		# self.nnmodel = "VGG19"
-		# self.nnmodel = "ENASNN"
-		self.nnmodel = "MobilenetV3"
-
-		#### step2 define platform and constrain
-		# self.target = "normal"
-		self.target = "cloud"
-		# self.target = "embed"
-		"""
-
-        #### step3 define goal
-        # self.goal = "latency"
-        self.goal = "energy"
-        # self.goal = "latency&energy"
-
-        #### final we can define the constrain
-        if self.nnmodel == "VGG16":
-            self.layer_num = 21
-        elif self.nnmodel == "VGG19":
-            self.layer_num = 24
-        elif self.nnmodel == "ENASNN":
-            self.layer_num = 30
-        elif self.nnmodel == "MobilenetV3":
-            self.layer_num = 76
+        #### step3 define goal and platform
+        self.goal = "latency"
+        self.target = "normal"
 
         if self.target == "normal":  # ref vertex7
             self.DSP_THRESHOLD = 2800
@@ -157,49 +117,24 @@ class test_config:
             self.BRAM_THRESHOLD = 345.9  # Mb
         elif self.target == "embed":  # ref zynq7000
             self.DSP_THRESHOLD = 900
-            # self.POWER_THRESHOLD = 5 #### in big space which contains memory, 5w is to small and almost no point can meet the constraints
             self.POWER_THRESHOLD = 20
             self.BW_THRESHOLD = 103  # Gbps actually is 102.4
             self.BRAM_THRESHOLD = 4.9  # Mb
-            # self.BRAM_THRESHOLD = 10#Mb
+
 
         self.THRESHOLD_RATIO = 2
-        DSP = constraint(
-            name="DSP",
-            threshold=self.DSP_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
-        POWER = constraint(
-            name="POWER",
-            threshold=self.POWER_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
-        BW = constraint(
-            name="BW", threshold=self.BW_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO
-        )
-        BRAM = constraint(
-            name="BRAM",
-            threshold=self.BRAM_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
+        DSP = constraint(name="DSP", threshold=self.DSP_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
+        POWER = constraint(name="POWER", threshold=self.POWER_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
+        BW = constraint(name="BW", threshold=self.DSP_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
+        BRAM = constraint(name="BRAM", threshold=self.DSP_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
         self.constraints = constraints()
         self.constraints.append(DSP)
-        # self.constraints.append(POWER)
+        self.constraints.append(POWER)
         self.constraints.append(BW)
         self.constraints.append(BRAM)
 
-    def config_check(self):
-        logger.info(f"######Config Check######")
-        logger.info(f"configtype:test")
-        logger.info(f"nnmodel:{self.nnmodel}")
-        logger.info(f"layer_num:{self.layer_num}")
-        logger.info(f"target:{self.target}")
-        for constraint in self.constraints.constraint_list:
-            logger.info(f"{constraint.get_name()}:{constraint.get_threshold()}")
-        logger.info(f"goal:{self.goal}")
 
-
-class my_test_config:
+class test_config:
     def __init__(self):
         self.AREA_THRESHOLD = 411
         self.THRESHOLD_RATIO = 2
@@ -211,14 +146,12 @@ class my_test_config:
         self.constraints = constraints()
         self.constraints.append(AREA)
 
-    def config_check(self):
-        logger.info(f"######Config Check######")
-        logger.info(f"configtype:test")
-        logger.info(f"AERA:{self.AREA_THRESHOLD}")
 
-
-class my_test_config_2:
+class test_config_:
     def __init__(self):
+        self.goal = "latency"
+        self.target = "normal"
+        
         self.AREA_THRESHOLD = 165
         self.THRESHOLD_RATIO = 2
         AREA = constraint(
@@ -229,56 +162,16 @@ class my_test_config_2:
         self.constraints = constraints()
         self.constraints.append(AREA)
 
-    def config_check(self):
-        logger.info(f"######Config Check######")
-        logger.info(f"configtype:test")
-        logger.info(f"AERA:{self.AREA_THRESHOLD}")
 
-
-#### only used for test6, test15, test16, test17
 class debug_config:
-    def __init__(self, atype):
-        #### step1 define model
-        if atype == 0:
-            self.nnmodel, self.target = "VGG16", "cloud"
-        elif atype == 1:
-            self.nnmodel, self.target = "VGG16", "normal"
-        elif atype == 2:
-            self.nnmodel, self.target = "VGG16", "embed"
-        elif atype == 3:
-            self.nnmodel, self.target = "MobilenetV3", "cloud"
-        elif atype == 4:
-            self.nnmodel, self.target = "MobilenetV3", "normal"
-        elif atype == 5:
-            self.nnmodel, self.target = "MobilenetV3", "embed"
-
-        """
-		self.nnmodel = "VGG16"
-		#self.nnmodel = "VGG19"
-		#self.nnmodel = "ENASNN"
-		#self.nnmodel = "MobilenetV3"
-
-		#### step2 define platform and constrain
-		#self.target = "normal"
-		#self.target = "cloud"
-		self.target = "embed"
-		"""
-
-        #### step3 define goal
+    def __init__(self):
+        self.constraints = constraints()
+        
+        # step1 define platform and constrain
         self.goal = "latency"
-        # self.goal = "energy"
-        # self.goal = "latency&energy"
+        self.target = "normal"
 
-        #### final we can define the constrain
-        if self.nnmodel == "VGG16":
-            self.layer_num = 21
-        elif self.nnmodel == "VGG19":
-            self.layer_num = 24
-        elif self.nnmodel == "ENASNN":
-            self.layer_num = 30
-        elif self.nnmodel == "MobilenetV3":
-            self.layer_num = 76
-
+        ## final define the constrain
         if self.target == "normal":  # ref vertex7
             self.DSP_THRESHOLD = 2800
             self.POWER_THRESHOLD = 60
@@ -291,43 +184,38 @@ class debug_config:
             self.BRAM_THRESHOLD = 345.9  # Mb
         elif self.target == "embed":  # ref zynq7000
             self.DSP_THRESHOLD = 900
-            # self.POWER_THRESHOLD = 5
             self.POWER_THRESHOLD = 20
             self.BW_THRESHOLD = 102.4  # Gbps
             self.BRAM_THRESHOLD = 4.9  # Mb
-
         self.THRESHOLD_RATIO = 2
-        DSP = constraint(
-            name="DSP",
-            threshold=self.DSP_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
-        POWER = constraint(
-            name="POWER",
-            threshold=self.POWER_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
-        BW = constraint(
-            name="BW",
-            threshold=self.DSP_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
-        BRAM = constraint(
-            name="BRAM",
-            threshold=self.DSP_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
+        
+        DSP = constraint(name="DSP", threshold=self.DSP_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
+        POWER = constraint(name="POWER", threshold=self.POWER_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
+        BW = constraint(name="BW", threshold=self.DSP_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
+        BRAM = constraint(name="BRAM", threshold=self.DSP_THRESHOLD, threshold_ratio=self.THRESHOLD_RATIO)
         self.constraints.append(DSP)
         self.constraints.append(POWER)
         self.constraints.append(BW)
         self.constraints.append(BRAM)
 
-    def config_check(self):
-        logger.info(f"######Config Check######")
-        logger.info(f"configtype:debug")
-        logger.info(f"nnmodel:{self.nnmodel}")
-        logger.info(f"layer_num:{self.layer_num}")
-        logger.info(f"target:{self.target}")
-        for constraint in self.constraints.constraint_list:
-            logger.info(f"{constraint.get_name()}:{constraint.get_threshold()}")
-        logger.info(f"goal:{self.goal}")
+
+def print_config(constraints, goal, target):
+    print(f"--------------Config Check--------------")
+    print(f"target        {target:>5}")
+    for constraint in constraints.constraint_list:
+        print(f"{constraint.get_name():<5}          {constraint.get_threshold():>5}")
+    print(f"goal:        {goal}")
+    
+    
+
+if __name__ == "__main__":
+    DSP = constraint(name="DSP", threshold=2800, threshold_ratio=2)
+    DSP.print()
+    # DSP.update(1)
+    # DSP.print()
+    
+    # test_conf = test_config_()
+    # print_config(test_conf.constraints, test_conf.goal, test_conf.target)
+    
+    # dbug = debug_config()
+    # print_config(dbug.constraints, dbug.goal, dbug.target)

@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 # from logger import Logger
 from crldse.env.eval import evaluation_function
 
+
 class dimension_discrete:
     def __init__(
         self,
@@ -16,7 +17,6 @@ class dimension_discrete:
         step,
         rrange,
         frozen=False,
-        model={"name": "normal", "param": 0.4},
     ):
         """
         "name"-string
@@ -29,7 +29,6 @@ class dimension_discrete:
         self.current_value = default_value
         self.step = step
         self.frozen = frozen
-        self.model = model # what's mean model
 
         assert rrange[0] <= rrange[-1]
         self.rrange = rrange
@@ -70,11 +69,10 @@ class dimension_discrete:
     def get_range_upbound(self):
         return self.rrange[-1]
 
-    def sample(self, sample_index):
-        assert sample_index >= 0 and sample_index <= self.scale - 1
+    def sample(self):
         if self.frozen == False:
-            self.current_index = sample_index
-            self.current_value = self.sample_box[sample_index]
+            self.current_value = np.random.choice(self.sample_box, 1, replace=True)[0]
+            self.current_index = self.sample_box.index(self.current_value)
         return self.current_value
 
     def get_current_index(self):
@@ -92,96 +90,107 @@ class dimension_discrete:
     def release(self):
         self.frozen = False
 
-    def get_model(self):
-        return self.model
-    
     def check_dimension_discrete(self):
         self.reset()
-        logger.info(self.sample_box)
+        print(self.sample_box)
         return
 
     def get_norm_current_value(self):
         return self.get_current_value() / self.get_range_upbound()
 
+
 class design_space:
-    def __init__(self):
+    def __init__(self) -> None:
         """
         dimension_box is a list of dict which is consist of two item,
         "name":str and "dimension":dimension_discrete
         """
         self.dimension_box = []
-        # self.evaluation = evaluation_function(nnmodel = "VGG16", target = "normal")
-        self.lenth = 0
+        self.length = 0
         self.scale = 1
 
-    def append(self, dimension_discrete):
+    def append(self, dimension_discrete) -> None:
         self.dimension_box.append(dimension_discrete)
-        self.lenth = self.lenth + 1
+        self.length = self.length + 1
         self.scale = self.scale * dimension_discrete.get_scale()
 
-    def get_status(self):
+    def get_status(self) -> dict:
         """
-        status is a dict class that can be used for matching of dimension "name":"dimension_value"
+        return a dict  that refer to a status"name":"dimension_value"
+        e.g. {'core': 1, 'l1i_size': 1, 'l1d_size': 1, 'l2_size': 6,
+        'l1d_assoc': 1, 'l1i_assoc': 1, 'l2_assoc': 1, 'sys_clock': 2}
         """
         status = dict()
         for item in self.dimension_box:
             status[item.get_name()] = item.get_current_value()
         return status
 
-    def get_status_value(self):
+    def get_status_value(self) -> list:
+        """only return the value of statue. e.g. [1, 1, 1, 6, 1, 1, 1, 2]
+        """
         status_value = list()
         for item in self.dimension_box:
             status_value.append(item.get_current_value())
         return status_value
 
-    def get_action_list(self):
+    def get_action_list(self) -> None:
+        """only return the value of action. e.g. [0, 0, 0, 0, 0, 0, 0, 0]
+        """
         action_list = list()
         for item in self.dimension_box:
             action_list.append(item.get_current_index())
         return action_list
 
-    def print_status(self):
+    def print_status(self) -> None:
+        """print the status in dict form"""
         for item in self.dimension_box:
             print(item.get_name(), item.get_current_value())
 
-    def sample_one_dimension(self, dimension_index, sample_index):
-        assert dimension_index >= 0 and dimension_index <= self.lenth - 1
-        self.dimension_box[dimension_index].sample(sample_index)
+    def sample_one_dimension(self, dimension_index) -> dict:
+        assert dimension_index >= 0 and dimension_index <= self.length - 1
+        self.dimension_box[dimension_index].sample()
         return self.get_status()
 
-    def set_one_dimension(self, dimension_index, sample_index):
-        assert dimension_index >= 0 and dimension_index <= self.lenth - 1
+    def set_one_dimension(self, dimension_index, sample_index) -> dict:
+        assert dimension_index >= 0 and dimension_index <= self.length - 1
         self.dimension_box[dimension_index].set(sample_index)
         return self.get_status()
 
-    def status_set(self, best_action_list):
+    def set_status(self, best_action_list) -> dict:
         for dimension, action in zip(self.dimension_box, best_action_list):
             dimension.set(action)
         return self.get_status()
 
-    def original_status_set(self, best_action_list):
+    def original_set_status(self, best_action_list) -> dict:
+        """set the default_index and default_value"""
         for dimension, action in zip(self.dimension_box, best_action_list):
             dimension.original_set(action)
         return self.get_status()
 
-    def status_reset(self):
+    def reset_status(self) -> dict:
+        """restore status to default index and default values"""
         for dimension in self.dimension_box:
             dimension.reset()
         return self.get_status()
 
-    def get_lenth(self):
-        return self.lenth
+    def get_length(self):
+        """the length of dimension_box"""
+        return self.length
 
     def get_scale(self):
+        """the total number of design points"""
         return self.scale
 
     def get_dimension_current_index(self, dimension_index):
+        """return a index of given dims"""
         return self.dimension_box[dimension_index].get_current_index()
 
     def get_dimension_scale(self, dimension_index):
+        """return the scale of given dims"""
         return self.dimension_box[dimension_index].get_scale()
 
     def get_dimension_sample_box(self, dimension_index):
+        """return the sample_box of given dims"""
         return self.dimension_box[dimension_index].sample_box
 
     def froze_one_dimension(self, dimension_index):
@@ -198,142 +207,23 @@ class design_space:
         for index in dimension_index_list:
             self.release_one_dimension(index)
 
-    def get_dimension_model(self, dimension_index):
-        return self.dimension_box[dimension_index].get_model()
-
-    #### new function, for ppo, require numpy and torch
     def get_obs(self):
+        """the actual value of current status"""
         obs_list = list()
         for item in self.dimension_box:
             obs_list.append(item.get_norm_current_value())
         obs = numpy.array(obs_list)
-        # obs = torch.from_numpy(obs)
         return obs
 
-def create_space_erdse(layer_num):
-    DSE_action_space = design_space()
-    num_param = 0.5
-    type_param = 0.1
-
-    ## initial DSE_action_space
-    PE_x = dimension_discrete(
-        name="PE_x",
-        default_value=2,
-        step=2,
-        rrange=[2, 30],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
-    )
-    PE_y = dimension_discrete(
-        name="PE_y",
-        default_value=2,
-        step=2,
-        rrange=[2, 30],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
-    )
-    f = dimension_discrete(
-        name="f",
-        default_value=1.5,
-        step=0.1,
-        rrange=[0.8, 2.6],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
-    )
-    minibatch = dimension_discrete(
-        name="minibatch",
-        default_value=5,
-        step=5,
-        rrange=[1, 50],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
-    )
-    bitwidth = dimension_discrete(
-        name="bitwidth",
-        default_value=2,
-        step=1,
-        rrange=[0, 2],
-        # model = {"name":"normal", "param":num_param}
-        model={"name": "one_hot", "param": type_param},
-    )
-
-    BW_frequency = dimension_discrete(
-        name="BW_frequency",
-        default_value=0,
-        step=1,
-        rrange=[0, 4],
-        # model = {"name":"normal", "param":num_param}
-        model={"name": "one_hot", "param": type_param},
-    )
-    # self.BW_frequency_list = [1.333, 1.6, 1.866, 2.133, 2.4]
-
-    BW_bitwidth = dimension_discrete(
-        name="BW_bitwidth",
-        default_value=64,
-        step=8,
-        rrange=[32, 128],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
-    )
-
-    BW_channel = dimension_discrete(
-        name="BW_channel",
-        default_value=1,
-        step=1,
-        rrange=[1, 2],
-        # model = {"name":"normal", "param":num_param}
-        model={"name": "one_hot", "param": type_param},
-    )
-
-    BRAM_total = dimension_discrete(
-        name="BRAM_total",
-        default_value=0,
-        step=1,
-        rrange=[0, 13],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
-    )
-    # self.BRAM_list = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512]
-
-    scheme_chosen_list = list()
-    for index in range(layer_num):
-        scheme_chosen_layer = dimension_discrete(
-            name=("scheme_chosen" + str(index + 1)),
-            default_value=1,
-            step=1,
-            rrange=[1, 3],
-            # model = {"name":"normal", "param":0.4}
-            model={"name": "one_hot", "param": type_param},
-        )
-        scheme_chosen_list.append(scheme_chosen_layer)
-
-    DSE_action_space = design_space()
-    DSE_action_space.append(PE_x)
-    DSE_action_space.append(PE_y)
-    DSE_action_space.append(f)
-    DSE_action_space.append(minibatch)
-    DSE_action_space.append(bitwidth)
-    DSE_action_space.append(BW_frequency)
-    DSE_action_space.append(BW_bitwidth)
-    DSE_action_space.append(BW_channel)
-    DSE_action_space.append(BRAM_total)
-    for item in scheme_chosen_list:
-        DSE_action_space.append(item)
-
-    return DSE_action_space
 
 def create_space_crldse():
     DSE_action_space = design_space()
-    num_param = 0.5
-    type_param = 0.1
 
     core = dimension_discrete(
         name="core",
         default_value=1,
         step=1,
         rrange=[1, 16],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
 
     l1i_size = dimension_discrete(
@@ -341,40 +231,30 @@ def create_space_crldse():
         default_value=1,
         step=1,
         rrange=[1, 12],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
     l1d_size = dimension_discrete(
         name="l1d_size",
         default_value=1,
         step=1,
         rrange=[1, 12],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
     l2_size = dimension_discrete(
         name="l2_size",
         default_value=6,
         step=1,
         rrange=[6, 16],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
     l1d_assoc = dimension_discrete(
         name="l1d_assoc",
         default_value=1,
         step=1,
         rrange=[1, 4],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
     l1i_assoc = dimension_discrete(
         name="l1i_assoc",
         default_value=1,
         step=1,
         rrange=[1, 4],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
 
     l2_assoc = dimension_discrete(
@@ -382,8 +262,6 @@ def create_space_crldse():
         default_value=1,
         step=1,
         rrange=[1, 4],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
 
     sys_clock = dimension_discrete(
@@ -391,10 +269,8 @@ def create_space_crldse():
         default_value=2,
         step=0.1,
         rrange=[2, 4],
-        model={"name": "normal", "param": num_param},
-        # model = {"name":"one_hot", "param":type_param}
     )
-    
+
     DSE_action_space = design_space()
     DSE_action_space.append(core)
     DSE_action_space.append(l1i_size)
@@ -406,6 +282,7 @@ def create_space_crldse():
     DSE_action_space.append(sys_clock)
 
     return DSE_action_space
+
 
 class environment_erdse:
 
@@ -435,31 +312,17 @@ class environment_erdse:
         self.best_reward = 0
         self.sample_time = 0
 
-        log_addr = "./record/objectvalue/"
-        log_name = (
-            log_addr
-            + self.model
-            + "_"
-            + self.target
-            + "_"
-            + self.goal
-            + "_"
-            + self.algo
-            + "_"
-            + str(self.nlabel)
-        )
-        self.result_log = open(log_name, "w")
         print(f"Period\tResult", end="\n", file=self.result_log)
 
-        self.design_space = create_space_erdse(self.layer_num)
+        # the next one line actural: self.design_space = create_space_erdse()
+        self.design_space = create_space_crldse()
 
-        self.design_space_dimension = self.design_space.get_lenth()
+        self.design_space_dimension = self.design_space.get_length()
         self.action_dimension_list = list()
         self.action_limit_list = list()
         for dimension in self.design_space.dimension_box:
             self.action_dimension_list.append(int(dimension.get_scale()))
             self.action_limit_list.append(int(dimension.get_scale() - 1))
-
 
         self.evaluation = evaluation_function(self.model, self.target)
 
@@ -469,19 +332,14 @@ class environment_erdse:
 
     def step(self, step, act, deterministic=False):
         if deterministic:
-            if torch.is_tensor(act):
-                act = torch.argmax(act, dim=-1).item()
-            else:
-                act = torch.argmax(torch.as_tensor(act).view(-1), dim=-1).item()
+            act = torch.argmax(torch.as_tensor(act).view(-1) if not torch.is_tensor(act) \
+                else torch.argmax(act, dim=-1).item(), dim=-1).item()
         else:
             if self.algo == "SAC":
-                if torch.is_tensor(act):
-                    act = torch.softmax(act, dim=-1)
-                    act = int(act.multinomial(num_samples=1).data.item())
-                if isinstance(act, numpy.ndarray):
-                    act = torch.as_tensor(act, dtype=torch.float32).view(-1)
-                    act = torch.softmax(act, dim=-1)
-                    act = int(act.multinomial(num_samples=1).data.item())
+                act = act if torch.is_tensor(act) else torch.as_tensor(act, dtype=torch.float32).view(-1)
+                act = torch.softmax(act, dim=-1)
+                # sample act based on the probability of the result of act softmax
+                act = int(act.multinomial(num_samples=1).data.item())
             elif self.algo == "PPO":
                 pass
 
@@ -489,7 +347,7 @@ class environment_erdse:
         next_status = self.design_space.sample_one_dimension(step, act)
         obs = self.design_space.get_obs()
 
-        if step < (self.design_space.get_lenth() - 1):
+        if step < (self.design_space.get_length() - 1):
             not_done = 1
         else:
             not_done = 0
@@ -529,7 +387,7 @@ class environment_erdse:
 
                 if not self.test:
                     self.sample_time += 1
-                    logger.info(
+                    print(
                         f"{self.sample_time}\t{self.best_result}",
                         end="\n",
                         file=self.result_log,
@@ -579,7 +437,8 @@ class environment_erdse:
         pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
         pi[idx] = 1
         return pi
-    
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     dse_space = create_space_crldse()
-    print()
+    dse_space.print_status()

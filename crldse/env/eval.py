@@ -9,9 +9,6 @@ from optparse import OptionParser
 
 import numpy as np
 
-# from crldse.logger import logger
-
-# log= logger.get_logger()
 mcpat_bin = "mcpat"
 
 
@@ -121,7 +118,7 @@ def get_evaluation(index_1_mcpat, index_2_gem5):
         "power": power,
     }
 
-    logger.info("energy is %f mJ" % energy)
+    print("energy is %f mJ" % energy)
     return metrics
 
 
@@ -155,17 +152,20 @@ def get_time_from_stats(stats_file):
     return ret_val
 
 class evaluation_function:
-    
+    # FIXME:这里evaluation_function是一个class，针对不同的target应该有不同的evaluate方法
     def __init__(self, target: str) -> None:
         self.target = target
         if self.target == "embedded":
             print("evaluated!")
 
-    def runtime(self) -> int:
+    def run_time(self) -> int:
         return np.random(size=1)
      
-    def energy(self):
+    def energy(self) -> float:
         return np.random(size=1)
+    
+    def update_parameter(next_status, has_memory=True) -> None:
+        return None
          
 
 if __name__=='__main__':
