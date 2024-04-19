@@ -7,7 +7,6 @@ from crldse.eval import get_evaluation
 from logger import logger
 
 logger = logger.get_logger()
-bar = "------------------------------"
 
 # the eval process:
 # step1: Pass the design parameters of the state to gem5
@@ -45,7 +44,7 @@ class evaluation_function:
         return
         
         
-    def print_args(self, args) -> None:
+    def log_args(self, args) -> None:
         logger.info("core = %s", args["core"])
         logger.info("l1i_size = %s", args["l1i_size"])
         logger.info("l1i_size = %s", args["l1i_size"])
@@ -57,7 +56,7 @@ class evaluation_function:
     
     # step1: Pass the design parameters of the state to gem5
     def sim_gem5(self):
-        logger.info(bar, "START SIMULATION", bar)
+        logger.info("-----------------------START SIMULATION-----------------------")
         os.system(
         "/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast -re \
             /parsec-tests2/gem5_2/gem5/configs/example/fs.py \
@@ -84,13 +83,13 @@ class evaluation_function:
             self.eval_args["l2_assoc"],
         )
     )
-    logger.info(bar, "END SIMULATER", bar)
+    logger.info("-----------------------END SIMULATER-----------------------")
     
     
     # step2: Convert the results of GEM5 to XML format
     # and extract the output file stats.txt of gem5
     def extract_gem5_output_to_xml(self):
-        logger.info(bar + "START DEVORE", bar)
+        logger.info("-----------------------START DEVORE-----------------------")
         f1 = open("/m5out/stats.txt")
         ss = "---------- Begin Simulation Statistics ----------"
         sr = f1.read().split(ss)
@@ -99,29 +98,30 @@ class evaluation_function:
             f = open("/m5out/%d.txt" % i, "w")
             f.write(sr[i] if i == 0 else ss + sr[i])
             f.close()
-        logger.info(bar, "END DEVORE", bar)
+        logger.info("-----------------------END DEVORE-----------------------")
+    
     
     # step3: Pass the gem5 output file in XML format to MCPAT
     def sim_mcpat(self):  
         try:
             if os.path.exists("/m5out/3.txt"):
-                print(bar, "START GEM5 To McPAT", bar)
+                logger.info("-----------------------START GEM5 To McPAT-----------------------")
                 command_2 = [
                     "python3",
                     "/parsec-tests2/cmcpat/cMcPAT/Scripts/GEM5ToMcPAT.py",
                     "/m5out/3.txt",
                     "/m5out/config.json",
                     "/parsec-tests2/cmcpat/cMcPAT/mcpat/ProcessorDescriptionFiles/x86_AtomicSimpleCPU_template_core_{}.xml".format(
-                        core
+                        self.eval_args["core"]
                     ),
                     "-o",
                     "/parsec-tests2/cmcpat/cMcPAT/Scripts/test.xml",
                 ]
                 process2 = Popen(command_2)
                 process2.wait()
-                logger.info(bar, "END GEM5 To McPAT", bar)
+                logger.info("-----------------------END GEM5 To McPAT-----------------------")
 
-                logger.info(bar, "START McPAT", bar)
+                logger.info("-----------------------START McPAT-----------------------")
                 file_output = open(
                     "/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log", "w"
                 )
@@ -134,12 +134,15 @@ class evaluation_function:
                 ]
                 process3 = Popen(command_3, stdout=file_output)
                 process3.wait()
-                logger.info(bar, "END McPAT", bar)
-                logger.info(bar, "START logger.info ENERGY", bar)
+                logger.info("-----------------------END McPAT-----------------------")
+                
+                
+                start = time.time()
+                logger.info("-----------------------START logger.info ENERGY-----------------------")
                 # the trule eval step
                 eval_log_path = "/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log"
                 metrics = get_evaluation(eval_log_path, "/m5out/3.txt")
-                logger.info(bar, "END logger.info ENERGY", bar)
+                logger.info("-----------------------END logger.info ENERGY-----------------------")
 
                 os.remove("/m5out/3.txt") if os.path.exists("/m5out/3.txt") else None
                 (os.remove(eval_log_path) if os.path.exists(eval_log_path) else None)

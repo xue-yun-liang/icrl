@@ -5,11 +5,8 @@ import pdb
 import numpy as np
 import matplotlib.pyplot as plt
 
-from logger import Logger
-from evaluation import evaluation_function
-
-logger = Logger.get_logger()
-
+# from logger import Logger
+from crldse.env.eval import evaluation_function
 
 class dimension_discrete:
     def __init__(
@@ -582,3 +579,7 @@ class environment_erdse:
         pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
         pi[idx] = 1
         return pi
+    
+if __name__ == '__main__':
+    dse_space = create_space_crldse()
+    print()

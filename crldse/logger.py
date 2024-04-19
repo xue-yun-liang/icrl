@@ -24,5 +24,3 @@ class logger:
         
         """
         return self._logger
-
-logger = Logger()

@@ -3,8 +3,9 @@ import os
 import math
 
 from subprocess import Popen
-from getevaluation import getevaluation
-from logger import Logger
+
+from crldse.eval import getevaluation
+from crldse.logger import Logger
 
 logger = Logger.get_logger()
 

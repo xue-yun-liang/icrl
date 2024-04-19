@@ -7,9 +7,11 @@ import math
 import subprocess as subp
 from optparse import OptionParser
 
-from crldse.logger import Logger
+import numpy as np
 
-logger = Logger.get_logger()
+# from crldse.logger import logger
+
+# log= logger.get_logger()
 mcpat_bin = "mcpat"
 
 
@@ -151,3 +153,21 @@ def get_time_from_stats(stats_file):
                 break  # no need to parse the whole file once the requested value has been found
     F.close()
     return ret_val
+
+class evaluation_function:
+    
+    def __init__(self, target: str) -> None:
+        self.target = target
+        if self.target == "embedded":
+            print("evaluated!")
+
+    def runtime(self) -> int:
+        return np.random(size=1)
+     
+    def energy(self):
+        return np.random(size=1)
+         
+
+if __name__=='__main__':
+    eval_ = evaluation_function("embedded")
+    
