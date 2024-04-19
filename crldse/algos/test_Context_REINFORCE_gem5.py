@@ -1,75 +1,120 @@
-from space import dimension_discrete
-from space import design_space
-from space import create_space_gem5
-from space import tsne3D
-from actor import actor_e_greedy, actor_policyfunction
-from evaluation import evaluation_function
-from config import my_test_config
-from multiprocessing import Pool
-from gem5_mcpat_evaluation import evaluation
-from transformer import model, optim
-import torch
 import random
-import numpy
 import pdb
 import copy
+from multiprocessing import Pool
+
+import gym
+import numpy as np
+import torch
 import xlwt
+
+from crldse.env.space import dimension_discrete, design_space, create_space_crldse
+from crldse.env.eval import evaluation_function
+from crldse.actor import actor_e_greedy, actor_policyfunction
+from crldse.net import mlp_policyfunction
+from crldse.config import test_config, print_config
+from crldse.env.gem5_mcpat_evaluation import evaluation
+from crldse.utils import core
+from transformer import model, optim 
+
 
 debug = False
 
 
-class mlp_policyfunction(torch.nn.Module):
-    def __init__(self, space_lenth, action_scale_list):
-        super(mlp_policyfunction, self).__init__()
-        self.space_lenth = space_lenth
-        self.action_scale_list = action_scale_list
-        self.fc1 = torch.nn.Linear(self.space_lenth + 1, 128)
-        self.fc2 = torch.nn.Linear(128, 64)
-        # layer fc3 is a multi-output mlp
-        self.fc3 = list()
-        for action_scale in self.action_scale_list:
-            self.fc3.append(torch.nn.Linear(64, action_scale))
-        self.fc3 = torch.nn.ModuleList(self.fc3)
+class REINFORCEBuffer:
+    """
+    A buffer for storing trajectories experienced by a VPG agent interacting
+    with the environment, and using Generalized Advantage Estimation (GAE-Lambda)
+    for calculating the advantages of state-action pairs.
+    """
 
-    def forward(self, qfunction_input, dimension_index):
-        dimension_index_normalize = dimension_index / self.space_lenth
-        input = torch.cat(
-            (qfunction_input, torch.tensor(dimension_index_normalize).float().view(1)),
-            dim=-1,
-        )
-        out1 = torch.nn.functional.relu(self.fc1(input))
-        out2 = torch.nn.functional.relu(self.fc2(out1))
-        out3 = self.fc3[dimension_index](out2)
-        return torch.nn.functional.softmax(out3, dim=-1)
+    def __init__(self, obs_dim, act_dim, size, gamma=0.99, lam=0.95):
+        self.obs_buf = np.zeros(core.combined_shape(size, obs_dim), dtype=np.float32)
+        self.act_buf = np.zeros(core.combined_shape(size, act_dim), dtype=np.float32)
+        self.adv_buf = np.zeros(size, dtype=np.float32)
+        self.rew_buf = np.zeros(size, dtype=np.float32)
+        self.ret_buf = np.zeros(size, dtype=np.float32)
+        self.val_buf = np.zeros(size, dtype=np.float32)
+        self.logp_buf = np.zeros(size, dtype=np.float32)
+        self.gamma, self.lam = gamma, lam
+        self.ptr, self.path_start_idx, self.max_size = 0, 0, size
+
+    def store(self, obs, act, rew, val, logp):
+        """
+        Append one timestep of agent-environment interaction to the buffer.
+        """
+        assert self.ptr < self.max_size     # buffer has to have room so you can store
+        self.obs_buf[self.ptr] = obs
+        self.act_buf[self.ptr] = act
+        self.rew_buf[self.ptr] = rew
+        self.val_buf[self.ptr] = val
+        self.logp_buf[self.ptr] = logp
+        self.ptr += 1
+
+    def finish_path(self, last_val=0):
+        """
+        Call this at the end of a trajectory, or when one gets cut off
+        by an epoch ending. This looks back in the buffer to where the
+        trajectory started, and uses rewards and value estimates from
+        the whole trajectory to compute advantage estimates with GAE-Lambda,
+        as well as compute the rewards-to-go for each state, to use as
+        the targets for the value function.
+
+        The "last_val" argument should be 0 if the trajectory ended
+        because the agent reached a terminal state (died), and otherwise
+        should be V(s_T), the value function estimated for the last state.
+        This allows us to bootstrap the reward-to-go calculation to account
+        for timesteps beyond the arbitrary episode horizon (or epoch cutoff).
+        """
+
+        path_slice = slice(self.path_start_idx, self.ptr)
+        rews = np.append(self.rew_buf[path_slice], last_val)
+        vals = np.append(self.val_buf[path_slice], last_val)
+        
+        # the next two lines implement GAE-Lambda advantage calculation
+        deltas = rews[:-1] + self.gamma * vals[1:] - vals[:-1]
+        self.adv_buf[path_slice] = core.discount_cumsum(deltas, self.gamma * self.lam)
+        
+        # the next line computes rewards-to-go, to be targets for the value function
+        self.ret_buf[path_slice] = core.discount_cumsum(rews, self.gamma)[:-1]
+        
+        self.path_start_idx = self.ptr
+
+    def get(self):
+        """
+        Call this at the end of an epoch to get all of the data from
+        the buffer, with advantages appropriately normalized (shifted to have
+        mean zero and std one). Also, resets some pointers in the buffer.
+        """
+        assert self.ptr == self.max_size    # buffer has to be full before you can get
+        self.ptr, self.path_start_idx = 0, 0
+        # the next two lines implement the advantage normalization trick
+        self.adv_buf = torch.as_tensor(self.adv_buf, dtype=torch.float32)
+        self.adv_buf = (self.adv_buf - torch.mean(self.adv_buf)) / torch.std(self.adv_buf)
+        data = dict(obs=self.obs_buf, act=self.act_buf, ret=self.ret_buf,
+                    adv=self.adv_buf, logp=self.logp_buf)
+        return {k: torch.as_tensor(v, dtype=torch.float32) for k,v in data.items()}
 
 
 class RLDSE:
     def __init__(self, iindex):
 
+        # 1. Logger setup
         self.iindex = iindex
 
+        # 2. Random seed setting
         seed = self.iindex * 10000
-        # atype is reference to models' config
-        atype = int(self.iindex / 10)
-
         torch.manual_seed(seed)
-        numpy.random.seed(seed)
+        np.random.seed(seed)
         random.seed(seed)
 
-        #### step1 assign model
-        self.config = my_test_config()
-        # self.nnmodel = self.config.nnmodel
-        # self.layer_num = self.config.layer_num
-
-        #### step2 assign platform
-        # constrain
-        # self.target = self.config.target
+        # assign goal, platgorm and constraints
+        self.config = test_config()
+        self.goal = self.config.goal
+        self.target = self.config.target
         self.constraints = self.config.constraints
-
-        #### step3 assign goal
-        # self.goal = self.config.goal
-        self.config.config_check()
-
+        print_config(self.config.constraints, self.goal, self.target)
+        
         # record the train process
         self.workbook = xlwt.Workbook(encoding="ascii")
         self.worksheet = self.workbook.add_sheet("1")
@@ -77,8 +122,8 @@ class RLDSE:
         self.worksheet.write(0, 1, "return")
         self.worksheet.write(0, 2, "loss")
 
-        ## initial DSE_action_space
-        self.DSE_action_space = create_space_gem5()
+        ## 3. Environment instantiation
+        self.env = gym.make('MCPDseEnv-v0')
 
         # define the hyperparameters
         self.SAMPLE_PERIOD_BOUND = 1
@@ -90,44 +135,37 @@ class RLDSE:
         self.ENTROPY_RATIO = 0
         self.PERIOD_BOUND = 500
 
+        # 4. constructing the ac pytoch module
         # initial mlp_policyfunction, every action dimension owns a policyfunction
-        # TODO:share the weight of first two layer among policyfunction
         action_scale_list = list()
         for dimension in self.DSE_action_space.dimension_box:
             action_scale_list.append(int(dimension.get_scale()))
-        self.policyfunction = mlp_policyfunction(
-            self.DSE_action_space.get_lenth(), action_scale_list
-        )
+        self.policyfunction = mlp_policyfunction(self.DSE_action_space.get_length(), action_scale_list)
 
         ##initial e_greedy_policy_function
         self.actor = actor_policyfunction()
 
         ##initial evaluation
-        # self.evaluation = evaluation_function(self.nnmodel, self.target)
+        self.evaluation = evaluation_function(self.target)
 
-        ##initial optimizer
-        self.policy_optimizer = torch.optim.Adam(
-            self.policyfunction.parameters(),
-            lr=self.ALPHA,
-        )
+        # 7. Making pytorch optimizers
+        self.policy_optimizer = torch.optim.Adam(self.policyfunction.parameters(),lr=self.ALPHA)
 
         #### loss replay buffer, in order to record and reuse high return trace
         self.loss_buffer = list()
 
+        # 5. Instantiating the experience buffer(for compute the loss)
         #### data vision related
         self.objectvalue_list = list()
         self.objectvalue_list.append(0)
         self.power_list = list()
-
         self.period_list = list()
         self.period_list.append(-1)
         self.best_objectvalue = 10000
         self.best_objectvalue_list = list()
         self.best_objectvalue_list.append(self.best_objectvalue)
-
         self.all_objectvalue = list()
         self.all_objectvalue2 = list()
-
         self.best_objectvalue2 = 10000
         self.best_objectvalue2_list = list()
         self.best_objectvalue2_list.append(self.best_objectvalue)
@@ -148,22 +186,23 @@ class RLDSE:
         
         # give the all info for encoder module
         # the decoder will change the weight of info during training
-        self.embedding = model.PositionalEncoding()
-        self.meta_encoder = model.Transformer()
-        self.meta_encoder_lr = 0.05
+        # FIXME: think about how to embedded the transformer into training process
+        # self.embedding = model.PositionalEncoding()
+        # self.meta_encoder = model.Transformer()
+        # self.meta_encoder_lr = 0.05
 
+    # 6. Setting up callble loss functions that also provide disgnostics specfic to algo
     def train(self):
         current_status = dict()  # S
         next_status = dict()  # S'
 
         loss = torch.tensor(0)  # define loss function
-        batch_index = 0
+        batch_idx = 0
 
         period_bound = self.SAMPLE_PERIOD_BOUND + self.PERIOD_BOUND
         for period in range(self.PERIOD_BOUND):
-            logger.info(f"period:{period}", end="\r")
-            # here may need a initial function for action_space
-            self.DSE_action_space.status_reset()
+            print(f"period:{period}", end="\r")
+            self.DSE_action_space.reset_status()
 
             # store log_prob, reward and return
             entropy_list = list()
@@ -216,7 +255,7 @@ class RLDSE:
                         and self.constraints.is_all_meet()
                     ):
                         self.best_objectvalue = objectvalue
-                        logger.info(f"best_status:{objectvalue}")
+                        print(f"best_status:{objectvalue}")
                     if self.constraints.is_all_meet():
                         self.all_objectvalue.append(objectvalue)
                         self.all_objectvalue2.append(objectvalue2)
@@ -277,61 +316,15 @@ class RLDSE:
     def test(self):
         pass
 
-
+# 10. running the main loop of the algorithms
 def run(iindex):
-    logger.info(f"%%%%TEST{iindex} START%%%%")
+    print(f"---------------TEST{iindex} START---------------")
     DSE = RLDSE(iindex)
     DSE.train()
-    DSE.test()
-
-    workbook2 = xlwt.Workbook(encoding="ascii")
-    worksheet2 = workbook2.add_sheet("1")
-    worksheet2.write(0, 0, "index")
-    worksheet2.write(0, 1, "objectvalue1")
-    worksheet2.write(0, 2, "objectvalue2")
-    for index, objectvalue in enumerate(DSE.all_objectvalue):
-        worksheet2.write(index + 1, 0, index + 1)
-        worksheet2.write(index + 1, 1, objectvalue)
-    for index, objectvalue in enumerate(DSE.all_objectvalue2):
-        worksheet2.write(index + 1, 2, objectvalue)
-    name = (
-        "record/objectvalue/"
-        + "REINFORCE"
-        + "_"
-        + "gem5"
-        + "_"
-        + str(iindex)
-        + "all_value"
-        + ".xls"
-    )
-    workbook2.save(name)
-
-    """
-	tsne3D(DSE.action_array, DSE.reward_array, "RI" + "_" + DSE.nnmodel + "_" + DSE.target)
-	high_value_reward = 0
-	for reward in DSE.reward_array:
-		if(reward >= 10): high_value_reward += 1
-	high_value_reward_proportion = high_value_reward/len(DSE.reward_array)
-	hfile = open("high_value_reward_proportion_"+str(iindex)+"_"+ "ACDSE" +".txt", "w")
-	logger.info(f"@@@@high-value design point proportion:{high_value_reward_proportion}@@@@", file=hfile)
-	"""
-
-    logger.info(f"%%%%TEST{iindex} END%%%%")
+    print(f"---------------TEST{iindex} END---------------")
 
 
 if __name__ == "__main__":
-    USE_MULTIPROCESS = False
     TEST_BOUND = 4
-
-    if USE_MULTIPROCESS:
-        iindex_list = list()
-        for i in range(TEST_BOUND):
-            iindex_list.append(i)
-
-        pool = Pool(30)
-        pool.map(run, iindex_list)
-        pool.close()
-        pool.join()
-    else:
-        for iindex in range(3, TEST_BOUND):
-            run(iindex)
+    for iindex in range(3, TEST_BOUND):
+        run(iindex)

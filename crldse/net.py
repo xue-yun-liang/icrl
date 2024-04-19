@@ -23,7 +23,9 @@ class mlp_policyfunction(torch.nn.Module):
         self.action_scale_list = action_scale_list
         self.fc1 = torch.nn.Linear(self.space_lenth + 1, 128)
         self.fc2 = torch.nn.Linear(128, 64)
-        # layer fc3 is a multi-output mlp
+        ###################################
+        # layer fc3 is a multi-output mlp #
+        ###################################
         self.fc3 = list()
         for action_scale in self.action_scale_list:
             self.fc3.append(torch.nn.Linear(64, action_scale))
@@ -117,3 +119,8 @@ class DDPG_mlp_policyfunction(torch.nn.Module):
         out2 = torch.nn.functional.relu(self.fc2(out1))
         out3 = self.fc3[dimension_index](out2)
         return torch.tanh(out3)  # * self.max_action
+
+
+if __name__ == '__main__':
+    policy_net = mlp_policyfunction(8,[2,3,4,5,6])
+    print(policy_net)

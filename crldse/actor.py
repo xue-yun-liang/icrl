@@ -5,9 +5,8 @@ import pdb
 import numpy
 import torch
 
-from space import dimension_discrete
-from space import design_space
-from evaluation import evaluation_function
+from crldse.env.space import dimension_discrete, design_space
+from crldse.env.eval import evaluation_function
 
 
 
