@@ -32,7 +32,7 @@ class MCPDseEnv(gym.Env):
     The observation is a `ndarray` with shape `(8,)` with the values corresponding
     to the following 8 variables:
 
-    FIXME: the value rrange may need to adjust (more modern value)
+    the value rrange can be adjusted by adjust the dimension_discrete's 'rrange'
 
     | Num | Observation  | default_value   |  step    |   Min    | Max      |
     |-----|--------------|-----------------|----------|----------|----------|
@@ -46,31 +46,27 @@ class MCPDseEnv(gym.Env):
     | 7   | sys_clock    | 2               | 0.1      | 2.0      |  4.0     |
 
     ### Rewards
-
+    # FIXME: add the reward 's compute logics
 
     ### Starting State
 
-    All observations are assigned a uniformly random value in `(-0.05, 0.05)`
+    the start state can adjust by dimension_discrete's 'default_value'
 
     ### Episode End
 
     The episode ends if any one of the following occurs:
 
+    # FIXME: when the agent will end its acts
     1. Termination:
     2. Termination:
 
     ### Arguments
 
-    target: Target platform for accelerator use. e.g. embeded, cloud, pc, workstation .etc
-    constraint: Constraint parameters for each dims
-
     """
 
     metadata = {}
 
-    def __init__(self, target: str, constraint: dict):
-        self.target = target            # the Optimized objects
-        self.constraint = constraint    # the constraint list
+    def __init__(self):
         self.sample_times = 0
 
         # init the design space and set constraint parameters
@@ -157,5 +153,5 @@ if __name__ == "__main__":
         "l2_assoc": 2,
         "sys_lock": 3.0,
     }
-    dse_env = gym.make("MCPDseEnv-v0", target=target_, constraint=constraint_params)
+    dse_env = gym.make("MCPDseEnv-v0")
     dse_env.sample(2)
