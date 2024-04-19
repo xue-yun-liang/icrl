@@ -8,6 +8,7 @@ import gym
 from gym import logger, spaces
 from crldse.env.space import design_space, create_space_crldse
 from crldse.env.eval import evaluation_function
+from crldse.config import test_config
 
 
 class MCPDseEnv(gym.Env):
@@ -75,12 +76,14 @@ class MCPDseEnv(gym.Env):
 
     metadata = {}
 
-    def __init__(self):
-        self.sample_times = 0
+    def __init__(self, config):
+        super(MCPDseEnv, self).__init__()
+        self.sample_time = 0
 
         # init the design space and set constraint parameters
         self.design_space = create_space_crldse()
         assert isinstance(self.design_space, design_space)
+        self.config = config
 
         # init some metadate of env
         self.design_space_dimension = self.design_space.get_length()
@@ -91,29 +94,33 @@ class MCPDseEnv(gym.Env):
             self.action_limit_list.append(int(dimension.get_scale() - 1))
 
         # set eval function
-        self.evaluation = evaluation_function(self.target)
+        self.evaluation = evaluation_function(target=self.config.target)
         self.result = 0
+        
+        self.steps = 0
 
-    def step(self, step, act):
+    def step(self, action):
+        print("enter step")
         # FIXME: fix the code here
         
         # FIXME: next four lines code only for SAC algo
-        act = act if torch.is_tensor(act) else torch.as_tensor(act, dtype=torch.float32).view(-1)
-        act = torch.softmax(act, dim=-1)
+        action = action if torch.is_tensor(action) else \
+            torch.as_tensor(action, dtype=torch.float32).view(-1)
+        action = torch.softmax(action, dim=-1)
         # sample act based on the probability of the result of act softmax
-        act = int(act.multinomial(num_samples=1).data.item())
+        action = int(action.multinomial(num_samples=1).data.item())
         
         current_status = self.design_space.get_status()
-        next_status = self.design_space.sample_one_dimension(step, act)
+        next_status = self.design_space.sample_one_dimension(self.steps)
         obs = self.design_space.get_obs()
         
-        if step < (self.design_space.get_length() - 1):
+        if self.steps < (self.design_space.get_length() - 1):
             done = False
         else:
             done = True
         
         if not done:
-            self.evaluation.update_parameter(next_status, has_memory=True)
+            self.evaluation.update_parameter(next_status)
             
 
             # get evaluation info
@@ -121,18 +128,21 @@ class MCPDseEnv(gym.Env):
             energy = self.evaluation.energy()
 
             # coumpute the reward
-            if self.goal == "latency":
-                reward = 1000 / (runtime * self.constraints.get_punishment())
+            if self.config.goal == "latency":
+                reward = self.config.constraints.get_punishment()
+                # reward = 1000 / (runtime * self.config.constraints.get_punishment())
                 self.result = runtime
-            elif self.goal == "energy":
-                reward = 1000 / (energy * self.constraints.get_punishment())
+            elif self.config.goal == "energy":
+                reward = self.config.constraints.get_punishment()
+                # reward = 1000 / (energy * self.config.constraints.get_punishment())
                 self.result = energy
-            elif self.goal == "latency&energy":
-                reward = 1000 / ((runtime * energy) * self.constraints.get_punishment())
+            elif self.config.goal == "latency&energy":
+                reward = self.config.constraints.get_punishment()
+                # reward = 1000 / ((runtime * energy) * self.config.constraints.get_punishment())
                 self.result = runtime * energy
 
         self.sample_time += 1
-          
+        print(type(obs)," ",type(reward)," ",type(done)," ",type({}))
         # the step function need to return next_state, reward, done, metadata
         return obs, reward, done, {}
 
@@ -140,11 +150,11 @@ class MCPDseEnv(gym.Env):
         self.design_space.reset_status()
         return self.design_space.get_obs()
 
-    def sample(self, step):
+    def sample(self):
         # here step refer to the idx of the design dimension
-        idx = np.random.randint(0, self.design_space.get_dimension_scale(step) - 1)
+        idx = np.random.randint(0, self.design_space.get_dimension_scale(self.steps) - 1)
         # pi if a ont hot tensor, that refer to which dim will be act 
-        pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
+        pi = torch.zeros(int(self.design_space.get_dimension_scale(self.steps)))
         pi[idx] = 1
         return pi
 
@@ -163,5 +173,15 @@ if __name__ == "__main__":
         "l2_assoc": 2,
         "sys_lock": 3.0,
     }
-    dse_env = gym.make("MCPDseEnv-v0")
-    dse_env.sample(2)
+    env = gym.make("MCPDseEnv-v0", config=test_config())
+    obs = env.reset()
+    print(obs)
+    # for i in range(7):
+    # act = env.sample()
+    # print('act:{}'.format(act))
+    # observation, reward, done, info = env.step(act) # take a random action
+    # print('observation:{}, reward:{}, done:{}, info:{}'.format(observation, reward, done, info))
+    print(type(env))
+    print(env.step([0,1]))
+    observation, reward, done, info = env.step([0,0,0,1])
+    

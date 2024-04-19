@@ -4,6 +4,7 @@ import os
 import json
 import types
 import math
+import random
 import subprocess as subp
 from optparse import OptionParser
 
@@ -159,12 +160,12 @@ class evaluation_function:
             print("evaluated!")
 
     def run_time(self) -> int:
-        return np.random(size=1)
+        return random.randint(1, 10)
      
     def energy(self) -> float:
-        return np.random(size=1)
+        return random.randint(1, 10)
     
-    def update_parameter(next_status, has_memory=True) -> None:
+    def update_parameter(self, status) -> None:
         return None
          
 

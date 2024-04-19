@@ -100,7 +100,7 @@ class constraints:
 
 
 class test_config:
-    def __init__(self, atype):
+    def __init__(self):
         #### step3 define goal and platform
         self.goal = "latency"
         self.target = "normal"
@@ -134,17 +134,17 @@ class test_config:
         self.constraints.append(BRAM)
 
 
-class test_config:
-    def __init__(self):
-        self.AREA_THRESHOLD = 411
-        self.THRESHOLD_RATIO = 2
-        AREA = constraint(
-            name="AREA",
-            threshold=self.AREA_THRESHOLD,
-            threshold_ratio=self.THRESHOLD_RATIO,
-        )
-        self.constraints = constraints()
-        self.constraints.append(AREA)
+# class test_config_:
+#     def __init__(self):
+#         self.AREA_THRESHOLD = 411
+#         self.THRESHOLD_RATIO = 2
+#         AREA = constraint(
+#             name="AREA",
+#             threshold=self.AREA_THRESHOLD,
+#             threshold_ratio=self.THRESHOLD_RATIO,
+#         )
+#         self.constraints = constraints()
+#         self.constraints.append(AREA)
 
 
 class test_config_:
