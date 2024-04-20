@@ -78,7 +78,7 @@ class MCPDseEnv(gym.Env):
 
     def __init__(self, config):
         super(MCPDseEnv, self).__init__()
-        self.sample_time = 0
+        self.sample_times = 0
 
         # init the design space and set constraint parameters
         self.design_space = create_space_crldse()
@@ -97,23 +97,38 @@ class MCPDseEnv(gym.Env):
         self.evaluation = evaluation_function(target=self.config.target)
         self.result = 0
         
-        self.steps = 0
+        self.steps = 6
 
     def step(self, action):
         print("enter step")
         # FIXME: fix the code here
+        # the logics in  here (ignore all processes for data):
+        # step1: give the action for design space, then design space give a new obs for next state
+        # step2: the evaluation function give the performance result for next state
+        # step3: the config.constraints update the performance values by the new performance result \
+            # and the reward could be compute by the config.constraints.get_punishment()
+                                    
+        # action(policy's reult) ---(step1:transtion)--->  next_state (sampled in design space) --------------|
+        # reward <----(step3: update the config.constraints)--- evalued result(preformace's indicators)<---(step2:evaluation_function---| 
+        
+        # NOTE* when we got the next state, need to adjust whether we arrive the 'done' state
         
         # FIXME: next four lines code only for SAC algo
+        
+        # For pre-processing of actions
         action = action if torch.is_tensor(action) else \
             torch.as_tensor(action, dtype=torch.float32).view(-1)
         action = torch.softmax(action, dim=-1)
-        # sample act based on the probability of the result of act softmax
+        # sample actual current act based on the probability of the result of act softmax
         action = int(action.multinomial(num_samples=1).data.item())
         
+        # step1: give the action for design space, get the next_statue
         current_status = self.design_space.get_status()
+        # FIXME: Is it reasonable to set the logic of state transition to random sampling ?
         next_status = self.design_space.sample_one_dimension(self.steps)
         obs = self.design_space.get_obs()
         
+        # step1.5:
         if self.steps < (self.design_space.get_length() - 1):
             done = False
         else:
@@ -122,10 +137,13 @@ class MCPDseEnv(gym.Env):
         if not done:
             self.evaluation.update_parameter(next_status)
             
+            # step2: get the performance result by evaluation_function
 
             # get evaluation info
             runtime= self.evaluation.run_time()*1000
             energy = self.evaluation.energy()
+            
+            # TODO: step3: update the config.constraints's performance values 
 
             # coumpute the reward
             if self.config.goal == "latency":
@@ -141,8 +159,7 @@ class MCPDseEnv(gym.Env):
                 # reward = 1000 / ((runtime * energy) * self.config.constraints.get_punishment())
                 self.result = runtime * energy
 
-        self.sample_time += 1
-        print(type(obs)," ",type(reward)," ",type(done)," ",type({}))
+        self.sample_times += 1
         # the step function need to return next_state, reward, done, metadata
         return obs, reward, done, {}
 
@@ -176,12 +193,10 @@ if __name__ == "__main__":
     env = gym.make("MCPDseEnv-v0", config=test_config())
     obs = env.reset()
     print(obs)
-    # for i in range(7):
-    # act = env.sample()
-    # print('act:{}'.format(act))
-    # observation, reward, done, info = env.step(act) # take a random action
-    # print('observation:{}, reward:{}, done:{}, info:{}'.format(observation, reward, done, info))
-    print(type(env))
-    print(env.step([0,1]))
-    observation, reward, done, info = env.step([0,0,0,1])
+    for i in range(10):
+        print("the {}th epoch".format(i))
+        act = env.sample()
+        print(act)
+        observation, reward, done, info = env.step(act) # take a random action
+        print('observation:{}, reward:{}, done:{}, info:{}'.format(observation, reward, done, info))
     
