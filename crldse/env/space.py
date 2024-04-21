@@ -1,9 +1,10 @@
-import torch
-import numpy
 import random
 import pdb
+
+import torch
 import numpy as np
 import matplotlib.pyplot as plt
+import yaml
 
 # from logger import Logger
 from crldse.env.eval import evaluation_function
@@ -212,74 +213,21 @@ class design_space:
         obs_list = list()
         for item in self.dimension_box:
             obs_list.append(item.get_norm_current_value())
-        obs = numpy.array(obs_list)
+        obs = np.array(obs_list)
         return obs
 
 
-def create_space_crldse():
+def create_space(config_data):
     DSE_action_space = design_space()
 
-    core = dimension_discrete(
-        name="core",
-        default_value=1,
-        step=1,
-        rrange=[1, 16],
-    )
-
-    l1i_size = dimension_discrete(
-        name="l1i_size",
-        default_value=1,
-        step=1,
-        rrange=[1, 12],
-    )
-    l1d_size = dimension_discrete(
-        name="l1d_size",
-        default_value=1,
-        step=1,
-        rrange=[1, 12],
-    )
-    l2_size = dimension_discrete(
-        name="l2_size",
-        default_value=6,
-        step=1,
-        rrange=[6, 16],
-    )
-    l1d_assoc = dimension_discrete(
-        name="l1d_assoc",
-        default_value=1,
-        step=1,
-        rrange=[1, 4],
-    )
-    l1i_assoc = dimension_discrete(
-        name="l1i_assoc",
-        default_value=1,
-        step=1,
-        rrange=[1, 4],
-    )
-
-    l2_assoc = dimension_discrete(
-        name="l2_assoc",
-        default_value=1,
-        step=1,
-        rrange=[1, 4],
-    )
-
-    sys_clock = dimension_discrete(
-        name="sys_clock",
-        default_value=2,
-        step=0.1,
-        rrange=[2, 4],
-    )
-
-    DSE_action_space = design_space()
-    DSE_action_space.append(core)
-    DSE_action_space.append(l1i_size)
-    DSE_action_space.append(l1d_size)
-    DSE_action_space.append(l2_size)
-    DSE_action_space.append(l1d_assoc)
-    DSE_action_space.append(l1i_assoc)
-    DSE_action_space.append(l2_assoc)
-    DSE_action_space.append(sys_clock)
+    for dimension_name, dimension_params in config_data['design_space'].items():
+        dimension = dimension_discrete(
+            name=dimension_name,
+            default_value=dimension_params['default_val'],
+            step=dimension_params['step'],
+            rrange=dimension_params['rrange'],
+        )
+        DSE_action_space.append(dimension)
 
     return DSE_action_space
 
@@ -315,7 +263,9 @@ class environment_erdse:
         print(f"Period\tResult", end="\n", file=self.result_log)
 
         # the next one line actural: self.design_space = create_space_erdse()
-        self.design_space = create_space_crldse()
+        with open('config.yaml', 'r') as file:
+            config_data = yaml.safe_load(file)
+        self.design_space = create_space(config_data=config_data)
 
         self.design_space_dimension = self.design_space.get_length()
         self.action_dimension_list = list()
@@ -440,5 +390,10 @@ class environment_erdse:
 
 
 if __name__ == "__main__":
-    dse_space = create_space_crldse()
-    dse_space.print_status()
+    # 使用新函数创建设计空间
+    space = create_space('config.yaml')
+    space.print_status()
+    print(space.get_obs())
+    for i in range(space.get_length()):
+        print(space.dimension_box[i].get_sample_box())
+    

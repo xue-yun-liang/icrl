@@ -3,12 +3,12 @@ from typing import Optional, Union
 
 import numpy as np
 import torch
-
 import gym
-from gym import logger, spaces
-from crldse.env.space import design_space, create_space_crldse
+import yaml
+
+from crldse.env.space import design_space, create_space
 from crldse.env.eval import evaluation_function
-from crldse.config import test_config
+from crldse.constraints import create_constraints_conf
 
 
 class MCPDseEnv(gym.Env):
@@ -76,15 +76,17 @@ class MCPDseEnv(gym.Env):
 
     metadata = {}
 
-    def __init__(self, config):
+    def __init__(self):
         super(MCPDseEnv, self).__init__()
         self.sample_times = 0
 
         # init the design space and set constraint parameters
-        self.design_space = create_space_crldse()
+        with open('./config.yaml', 'r') as file:
+            self.config = yaml.safe_load(file)
+        self.constraints_conf = create_constraints_conf(config_data=self.config)
+        self.design_space = create_space(config_data=self.config)
         assert isinstance(self.design_space, design_space)
-        self.config = config
-
+        
         # init some metadate of env
         self.design_space_dimension = self.design_space.get_length()
         self.action_dimension_list = list()
@@ -94,9 +96,9 @@ class MCPDseEnv(gym.Env):
             self.action_limit_list.append(int(dimension.get_scale() - 1))
 
         # set eval function
-        self.evaluation = evaluation_function(target=self.config.target)
-        self.result = 0
+        self.evaluation = evaluation_function(target=self.config['target'])
         
+        self.result = 0
         self.steps = 6
 
     def step(self, action):
@@ -108,8 +110,8 @@ class MCPDseEnv(gym.Env):
         # step3: the config.constraints update the performance values by the new performance result \
             # and the reward could be compute by the config.constraints.get_punishment()
                                     
-        # action(policy's reult) ---(step1:transtion)--->  next_state (sampled in design space) --------------|
-        # reward <----(step3: update the config.constraints)--- evalued result(preformace's indicators)<---(step2:evaluation_function---| 
+        # action(policy's reult) ---(step1:transition)--->  next_state (sampled in design space) ---------------------------------------|
+        # reward <---(step3: update the config.constraints)--- evalued result(preformace's indicators)<---(step2:evaluation_function)---| 
         
         # NOTE* when we got the next state, need to adjust whether we arrive the 'done' state
         
@@ -125,6 +127,8 @@ class MCPDseEnv(gym.Env):
         # step1: give the action for design space, get the next_statue
         current_status = self.design_space.get_status()
         # FIXME: Is it reasonable to set the logic of state transition to random sampling ?
+        # Until here, the action is equal to a tensor[idx_dim1, idx_dim2, idx_dim3, ..., idx_dimn]
+        # where the n refer to the design dims. Under current's occusion n = 8.
         next_status = self.design_space.sample_one_dimension(self.steps)
         obs = self.design_space.get_obs()
         
@@ -146,17 +150,14 @@ class MCPDseEnv(gym.Env):
             # TODO: step3: update the config.constraints's performance values 
 
             # coumpute the reward
-            if self.config.goal == "latency":
-                reward = self.config.constraints.get_punishment()
-                # reward = 1000 / (runtime * self.config.constraints.get_punishment())
+            reward = self.constraints_conf.constraints.get_punishment()
+            punishment = 1 if reward == 0 else reward
+            reward = 1000 / (runtime * punishment)
+            if self.config['goal'] == "latency":
                 self.result = runtime
-            elif self.config.goal == "energy":
-                reward = self.config.constraints.get_punishment()
-                # reward = 1000 / (energy * self.config.constraints.get_punishment())
+            elif self.config['goal'] == "energy":
                 self.result = energy
-            elif self.config.goal == "latency&energy":
-                reward = self.config.constraints.get_punishment()
-                # reward = 1000 / ((runtime * energy) * self.config.constraints.get_punishment())
+            elif self.config['goal'] == "latency&energy":
                 self.result = runtime * energy
 
         self.sample_times += 1
@@ -177,20 +178,8 @@ class MCPDseEnv(gym.Env):
 
 
 if __name__ == "__main__":
-    
     # test code for env wapper
-    target_ = "embedded"
-    constraint_params = {
-        "core": 10,
-        "l1i_size": 32,
-        "l1d_size": 32,
-        "l2_size": 128,
-        "l1d_assoc": 2,
-        "l1i_assoc": 2,
-        "l2_assoc": 2,
-        "sys_lock": 3.0,
-    }
-    env = gym.make("MCPDseEnv-v0", config=test_config())
+    env = gym.make("MCPDseEnv-v0")
     obs = env.reset()
     print(obs)
     for i in range(10):
