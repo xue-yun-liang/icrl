@@ -8,7 +8,7 @@ import yaml
 
 from crldse.env.space import design_space, create_space
 from crldse.env.eval import evaluation_function
-from crldse.constraints import create_constraints_conf
+from crldse.env.constraints import create_constraints_conf
 
 
 class MCPDseEnv(gym.Env):

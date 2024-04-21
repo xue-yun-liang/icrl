@@ -7,15 +7,15 @@ import gym
 import numpy as np
 import torch
 import xlwt
+import yaml
 
-from crldse.env.space import dimension_discrete, design_space, create_space_crldse
+from crldse.env.space import dimension_discrete, design_space, create_space
 from crldse.env.eval import evaluation_function
 from crldse.actor import actor_e_greedy, actor_policyfunction
 from crldse.net import mlp_policyfunction
-from crldse.config import test_config, print_config
+from crldse.env.constraints import create_constraints_conf, print_config
 from crldse.env.gem5_mcpat_evaluation import evaluation
 from crldse.utils import core
-from transformer import model, optim 
 
 
 debug = False
@@ -109,18 +109,18 @@ class RLDSE:
         random.seed(seed)
 
         # assign goal, platgorm and constraints
-        self.config = test_config()
-        self.goal = self.config.goal
-        self.target = self.config.target
-        self.constraints = self.config.constraints
-        print_config(self.config.constraints, self.goal, self.target)
+        with open('config.yaml', 'r') as file:
+            config_data = yaml.safe_load(file)
+
+        self.constraints_conf = create_constraints_conf(config_data)
+        print_config(self.constraints_conf)
         
         # record the train process
-        self.workbook = xlwt.Workbook(encoding="ascii")
-        self.worksheet = self.workbook.add_sheet("1")
-        self.worksheet.write(0, 0, "period")
-        self.worksheet.write(0, 1, "return")
-        self.worksheet.write(0, 2, "loss")
+        # self.workbook = xlwt.Workbook(encoding="ascii")
+        # self.worksheet = self.workbook.add_sheet("1")
+        # self.worksheet.write(0, 0, "period")
+        # self.worksheet.write(0, 1, "return")
+        # self.worksheet.write(0, 2, "loss")
 
         ## 3. Environment instantiation
         self.env = gym.make('MCPDseEnv-v0')
@@ -282,8 +282,8 @@ class RLDSE:
                 return_g = reward_list[T - 1 - t] + self.GEMA * return_g
                 return_list.append(torch.tensor(return_g).reshape(1))
             return_list.reverse()
-            self.worksheet.write(period + 1, 0, period)
-            self.worksheet.write(period + 1, 1, return_list[0].item())
+            # self.worksheet.write(period + 1, 0, period)
+            # self.worksheet.write(period + 1, 1, return_list[0].item())
 
             # compute and record entropy_loss
             entropy_loss = torch.tensor(0)

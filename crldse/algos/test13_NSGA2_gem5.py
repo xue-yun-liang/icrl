@@ -1,7 +1,7 @@
 import numpy as np
 import geatpy as ea
 from crldse.evaluation import evaluation_function
-from crldse.config import my_test_config
+from crldse.constraints import my_test_config
 import random
 from crldse.gem5_mcpat_evaluation import evaluation
 from matplotlib import pyplot as plt

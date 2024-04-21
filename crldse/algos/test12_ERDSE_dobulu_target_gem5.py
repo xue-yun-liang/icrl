@@ -4,7 +4,7 @@ from crldse.space import create_space_gem5
 from crldse.space import tsne3D
 from crldse.actor import actor_policyfunction, get_log_prob
 from crldse.evaluation import evaluation_function
-from crldse.config import my_test_config
+from crldse.constraints import my_test_config
 from multiprocessing import Pool
 from crldse.gem5_mcpat_evaluation_2 import evaluation
 import torch

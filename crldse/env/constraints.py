@@ -129,7 +129,7 @@ def print_config(constraints_conf):
     
 
 if __name__ == "__main__":
-    with open('./env/config.yaml', 'r') as file:
+    with open('./config.yaml', 'r') as file:
         config_data = yaml.safe_load(file)
     test_conf = create_constraints_conf(config_data=config_data)
     print_config(test_conf)

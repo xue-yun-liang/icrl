@@ -1,16 +1,21 @@
-import torch
 import random
-import numpy
 import pdb
 import copy
-import xlwt
 from multiprocessing import Pool
 
-from crldse.space import create_space_erdse
-from crldse.actor import actor_policyfunction, get_log_prob
-from crldse.evaluation import evaluation_function
-from crldse.config import my_test_config_2
-from crldse.gem5_mcpat_evaluation import evaluation
+import gym
+import numpy as np
+import torch
+import xlwt
+import yaml
+
+from crldse.env.space import dimension_discrete, design_space, create_space
+from crldse.env.eval import evaluation_function
+from crldse.actor import actor_e_greedy, actor_policyfunction, get_log_prob
+from crldse.net import mlp_policyfunction
+from crldse.env.constraints import create_constraints_conf, print_config
+from crldse.env.gem5_mcpat_evaluation import evaluation
+from crldse.utils import core
 
 
 debug = False
@@ -49,11 +54,15 @@ class RLDSE:
         atype = 4
 
         torch.manual_seed(seed)
-        numpy.random.seed(seed)
+        np.random.seed(seed)
         random.seed(seed)
 
         #### step1 assign model
-        self.config = my_test_config_2()
+        with open('config.yaml', 'r') as file:
+            self.config_data = yaml.safe_load(file)
+
+        self.constraints_conf = create_constraints_conf(self.config_data)
+        print_config(self.constraints_conf)
         # self.nnmodel = self.config.nnmodel
         self.has_memory = True
 
@@ -72,7 +81,7 @@ class RLDSE:
         self.worksheet.write(0, 2, "loss")
 
         ## initial DSE_action_space
-        self.DSE_action_space = create_space_erdse()
+        self.DSE_action_space = create_space(self.config_data)
 
         # define the hyperparameters
         self.PERIOD_BOUND = 500
@@ -268,7 +277,7 @@ class RLDSE:
                     self.step_buffer.append(step_list)
                     self.probs_noise_buffer.append(probs_noise_list)
                 else:
-                    min_index = numpy.argmin(self.return_buffer, axis=0)
+                    min_index = np.argmin(self.return_buffer, axis=0)
                     min_index = min_index[0]
                     min_return = self.return_buffer[min_index][0]
                     if return_list[0] > min_return:

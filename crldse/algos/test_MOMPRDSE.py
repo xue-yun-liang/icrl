@@ -1,50 +1,29 @@
-from crldse.space import dimension_discrete
-from crldse.space import design_space
-from crldse.space import create_space_crldse
-from crldse.actor import actor_policyfunction, get_log_prob
-from crldse.evaluation import evaluation_function
-from crldse.config import my_test_config
-from multiprocessing import Pool
-
-from crldse.mlp import mlp_fillter
-from crldse.gem5_mcpat_evaluation import evaluation
-import torch
 import random
-import numpy
-import numpy as np
 import pdb
 import copy
+from multiprocessing import Pool
+
+import gym
+import numpy as np
+import torch
 import xlwt
+import yaml
+
+from crldse.actor import actor_e_greedy, actor_policyfunction, get_log_prob
+from crldse.env.space import dimension_discrete, design_space, create_space
+from crldse.env.eval import evaluation_function
+from crldse.env.constraints import create_constraints_conf, print_config
+from crldse.env.gem5_mcpat_evaluation import evaluation
+from crldse.net import mlp_policyfunction, mlp_fillter
+from crldse.utils import core
+
 
 debug = False
-
 weight_power = 0.9
 weight_runtime = 0.1
 
-class mlp_policyfunction(torch.nn.Module):
-    def __init__(self, space_lenth, action_scale_list):
-        super(mlp_policyfunction, self).__init__()
-        self.space_lenth = space_lenth
-        self.action_scale_list = action_scale_list
-        self.fc1 = torch.nn.Linear(self.space_lenth + 1, 128)
-        self.fc2 = torch.nn.Linear(128, 64)
-        # layer fc3 is a multi-output mlp
-        self.fc3 = list()
-        for action_scale in self.action_scale_list:
-            self.fc3.append(torch.nn.Linear(64, action_scale))
-        self.fc3 = torch.nn.ModuleList(self.fc3)
 
-    def forward(self, qfunction_input, dimension_index):
-        input = torch.cat(
-            (qfunction_input, torch.tensor(dimension_index).float().view(1)), dim=-1
-        )
-        out1 = torch.nn.functional.relu(self.fc1(input))
-        out2 = torch.nn.functional.relu(self.fc2(out1))
-        out3 = self.fc3[dimension_index](out2)
-        return torch.nn.functional.softmax(out3, dim=-1)
-
-
-class RLDSE:
+class MOMPRDSE:
     def __init__(self, iindex):
 
         self.iindex = iindex
@@ -53,11 +32,15 @@ class RLDSE:
         atype = 4
 
         torch.manual_seed(seed)
-        numpy.random.seed(seed)
+        np.random.seed(seed)
         random.seed(seed)
 
         #### step1 assign model
-        self.config = my_test_config()
+        with open('config.yaml', 'r') as file:
+            self.config_data = yaml.safe_load(file)
+
+        self.constraints_conf = create_constraints_conf(self.config_data)
+        print_config(self.constraints_conf)
         # self.nnmodel = self.config.nnmodel
         # self.layer_num = self.config.layer_num
         self.has_memory = True
@@ -78,7 +61,7 @@ class RLDSE:
         self.worksheet.write(0, 2, "loss")
 
         ## initial DSE_action_space
-        self.DSE_action_space = create_space_crldse()
+        self.DSE_action_space = create_space(self.config_data)
 
         # define the hyperparameters
         self.PERIOD_BOUND = 500
@@ -183,17 +166,17 @@ class RLDSE:
         self.reward2_array = list()
         self.reward3_array = list()
         # ++++++++++++++++++++++++++fillter+++++++++++++++++++++++++++++
-        self.fillter = mlp_fillter(self.DSE_action_space.get_lenth())
+        self.fillter = mlp_fillter(self.DSE_action_space.get_length())
         #### fillter buffer
         self.fillter_obs_buffer = list()
         self.fillter_reward_buffer = list()
 
-        self.fillter2 = mlp_fillter(self.DSE_action_space.get_lenth())
+        self.fillter2 = mlp_fillter(self.DSE_action_space.get_length())
         #### fillter buffer
         self.fillter_obs_buffer2 = list()
         self.fillter_reward_buffer2 = list()
 
-        self.fillter3 = mlp_fillter(self.DSE_action_space.get_lenth())
+        self.fillter3 = mlp_fillter(self.DSE_action_space.get_length())
         #### fillter buffer
         self.fillter_obs_buffer3 = list()
         self.fillter_reward_buffer3 = list()
@@ -734,7 +717,7 @@ class RLDSE:
 def run(iindex):
     print(f"%%%%TEST{iindex} START%%%%")
 
-    DSE = RLDSE(iindex)
+    DSE = MOMPRDSE(iindex)
     print(f"DSE scale:{DSE.DSE_action_space.get_scale()}")
     DSE.train()
     DSE.test()
@@ -746,16 +729,8 @@ def run(iindex):
     for index, best_objectvalue in enumerate(DSE.best_objectvalue_list):
         worksheet.write(index + 1, 0, index + 1)
         worksheet.write(index + 1, 1, best_objectvalue)
-    name = (
-        "record/objectvalue_double_three_policy/"
-        + "_"
-        + "MOMPRDSE"
-        + "_"
-        + "runtime"
-        + str(iindex)
-        + "500"
-        + ".xls"
-    )
+    name = ("record/objectvalue_double_three_policy/"+"_"+"MOMPRDSE"+"_"+\
+        "runtime"+str(iindex)+"500"+".xls")
     workbook.save(name)
 
     workbook = xlwt.Workbook(encoding="ascii")

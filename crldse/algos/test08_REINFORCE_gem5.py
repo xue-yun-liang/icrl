@@ -1,21 +1,19 @@
-from crldse.space import dimension_discrete
-from crldse.space import design_space
-from crldse.space import create_space_gem5
-from crldse.space import tsne3D
-from crldse.actor import actor_e_greedy, actor_policyfunction
-from crldse.evaluation import evaluation_function
-from crldse.config import my_test_config
-from multiprocessing import Pool
-from crldse.gem5_mcpat_evaluation import evaluation
-import torch
-import random
-import numpy
-import pdb
 import copy
+import pdb
+from multiprocessing import Pool
+
+import numpy
+import random
+import torch
 import xlwt
 
-debug = False
+from crldse.actor import actor_e_greedy, actor_policyfunction
+from crldse.constraints import test_config
+from crldse.env.space import dimension_discrete, design_space, create_space
+from crldse.env.eval import evaluation_function
+from crldse.env.gem5_mcpat_evaluation import evaluation
 
+debug = False
 
 class mlp_policyfunction(torch.nn.Module):
     def __init__(self, space_lenth, action_scale_list):
