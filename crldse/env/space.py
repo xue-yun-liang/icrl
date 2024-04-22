@@ -1,14 +1,4 @@
-import random
-import pdb
-
-import torch
 import numpy as np
-import matplotlib.pyplot as plt
-import yaml
-
-# from logger import Logger
-from crldse.env.eval import evaluation_function
-
 
 class dimension_discrete:
     def __init__(
@@ -231,168 +221,180 @@ def create_space(config_data):
     return DSE_action_space
 
 
-class environment_erdse:
+# class environment_erdse:
 
-    def __init__(
-        self,
-        layer_num,
-        model,
-        target,
-        goal,
-        constraints,
-        nlabel,
-        algo,
-        test=False,
-        delay_reward=True,
-    ):
-        self.layer_num = layer_num
-        self.model = model
-        self.target = target
-        self.goal = goal
-        self.constraints = constraints
-        self.nlabel = nlabel
-        self.algo = algo
-        self.test = test
-        self.delay_reward = delay_reward
+#     def __init__(
+#         self,
+#         layer_num,
+#         model,
+#         target,
+#         goal,
+#         constraints,
+#         nlabel,
+#         algo,
+#         test=False,
+#         delay_reward=True,
+#     ):
+#         self.layer_num = layer_num
+#         self.model = model
+#         self.target = target
+#         self.goal = goal
+#         self.constraints = constraints
+#         self.nlabel = nlabel
+#         self.algo = algo
+#         self.test = test
+#         self.delay_reward = delay_reward
 
-        self.best_result = 1e10
-        self.best_reward = 0
-        self.sample_time = 0
+#         self.best_result = 1e10
+#         self.best_reward = 0
+#         self.sample_time = 0
 
-        print(f"Period\tResult", end="\n", file=self.result_log)
+#         print(f"Period\tResult", end="\n", file=self.result_log)
 
-        # the next one line actural: self.design_space = create_space_erdse()
-        with open('config.yaml', 'r') as file:
-            config_data = yaml.safe_load(file)
-        self.design_space = create_space(config_data=config_data)
+#         # the next one line actural: self.design_space = create_space_erdse()
+#         with open('config.yaml', 'r') as file:
+#             config_data = yaml.safe_load(file)
+#         self.design_space = create_space(config_data=config_data)
 
-        self.design_space_dimension = self.design_space.get_length()
-        self.action_dimension_list = list()
-        self.action_limit_list = list()
-        for dimension in self.design_space.dimension_box:
-            self.action_dimension_list.append(int(dimension.get_scale()))
-            self.action_limit_list.append(int(dimension.get_scale() - 1))
+#         self.design_space_dimension = self.design_space.get_length()
+#         self.action_dimension_list = list()
+#         self.action_limit_list = list()
+#         for dimension in self.design_space.dimension_box:
+#             self.action_dimension_list.append(int(dimension.get_scale()))
+#             self.action_limit_list.append(int(dimension.get_scale() - 1))
 
-        self.evaluation = evaluation_function(self.model, self.target)
+#         self.evaluation = evaluation_function(self.model, self.target)
 
-    def reset(self):
-        self.design_space.status_reset()
-        return self.design_space.get_obs()
+#     def reset(self):
+#         self.design_space.status_reset()
+#         return self.design_space.get_obs()
 
-    def step(self, step, act, deterministic=False):
-        if deterministic:
-            act = torch.argmax(torch.as_tensor(act).view(-1) if not torch.is_tensor(act) \
-                else torch.argmax(act, dim=-1).item(), dim=-1).item()
-        else:
-            if self.algo == "SAC":
-                act = act if torch.is_tensor(act) else torch.as_tensor(act, dtype=torch.float32).view(-1)
-                act = torch.softmax(act, dim=-1)
-                # sample act based on the probability of the result of act softmax
-                act = int(act.multinomial(num_samples=1).data.item())
-            elif self.algo == "PPO":
-                pass
+#     def step(self, step, act, deterministic=False):
+#         if deterministic:
+#             act = torch.argmax(torch.as_tensor(act).view(-1) if not torch.is_tensor(act) \
+#                 else torch.argmax(act, dim=-1).item(), dim=-1).item()
+#         else:
+#             if self.algo == "SAC":
+#                 act = act if torch.is_tensor(act) else torch.as_tensor(act, dtype=torch.float32).view(-1)
+#                 act = torch.softmax(act, dim=-1)
+#                 # sample act based on the probability of the result of act softmax
+#                 act = int(act.multinomial(num_samples=1).data.item())
+#             elif self.algo == "PPO":
+#                 pass
 
-        current_status = self.design_space.get_status()
-        next_status = self.design_space.sample_one_dimension(step, act)
-        obs = self.design_space.get_obs()
+#         current_status = self.design_space.get_status()
+#         next_status = self.design_space.sample_one_dimension(step, act)
+#         obs = self.design_space.get_obs()
 
-        if step < (self.design_space.get_length() - 1):
-            not_done = 1
-        else:
-            not_done = 0
+#         if step < (self.design_space.get_length() - 1):
+#             not_done = 1
+#         else:
+#             not_done = 0
 
-        if not_done:
-            if self.delay_reward:
-                reward = float(0)
-            else:
-                self.evaluation.update_parameter(next_status, has_memory=True)
-                runtime, t_L = self.evaluation.runtime()
-                runtime = runtime * 1000
-                power, DSP = self.evaluation.power(), self.evaluation.DSP()
-                energy = self.evaluation.energy()
-                BW = self.evaluation.BW_total
-                BRAM = self.evaluation.BRAM_total
+#         if not_done:
+#             if self.delay_reward:
+#                 reward = float(0)
+#             else:
+#                 self.evaluation.update_parameter(next_status, has_memory=True)
+#                 runtime, t_L = self.evaluation.runtime()
+#                 runtime = runtime * 1000
+#                 power, DSP = self.evaluation.power(), self.evaluation.DSP()
+#                 energy = self.evaluation.energy()
+#                 BW = self.evaluation.BW_total
+#                 BRAM = self.evaluation.BRAM_total
 
-                self.constraints.update(
-                    {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
-                )
+#                 self.constraints.update(
+#                     {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
+#                 )
 
-                if self.goal == "latency":
-                    reward = 1000 / (runtime * self.constraints.get_punishment())
-                    result = runtime
-                elif self.goal == "energy":
-                    reward = 1000 / (energy * self.constraints.get_punishment())
-                    result = energy
-                elif self.goal == "latency&energy":
-                    reward = 1000 / (
-                        (runtime * energy) * self.constraints.get_punishment()
-                    )
-                    result = runtime * energy
+#                 if self.goal == "latency":
+#                     reward = 1000 / (runtime * self.constraints.get_punishment())
+#                     result = runtime
+#                 elif self.goal == "energy":
+#                     reward = 1000 / (energy * self.constraints.get_punishment())
+#                     result = energy
+#                 elif self.goal == "latency&energy":
+#                     reward = 1000 / (
+#                         (runtime * energy) * self.constraints.get_punishment()
+#                     )
+#                     result = runtime * energy
 
-                if (result < self.best_result) and self.constraints.is_all_meet():
-                    self.best_result = result
-                if (reward > self.best_reward) and self.constraints.is_all_meet():
-                    self.best_reward = reward
+#                 if (result < self.best_result) and self.constraints.is_all_meet():
+#                     self.best_result = result
+#                 if (reward > self.best_reward) and self.constraints.is_all_meet():
+#                     self.best_reward = reward
 
-                if not self.test:
-                    self.sample_time += 1
-                    print(
-                        f"{self.sample_time}\t{self.best_result}",
-                        end="\n",
-                        file=self.result_log,
-                    )
-        else:
-            self.evaluation.update_parameter(next_status, has_memory=True)
-            runtime, t_L = self.evaluation.runtime()
-            runtime = runtime * 1000
-            power, DSP = self.evaluation.power(), self.evaluation.DSP()
-            energy = self.evaluation.energy()
-            BW = self.evaluation.BW_total
-            BRAM = self.evaluation.BRAM_total
+#                 if not self.test:
+#                     self.sample_time += 1
+#                     print(
+#                         f"{self.sample_time}\t{self.best_result}",
+#                         end="\n",
+#                         file=self.result_log,
+#                     )
+#         else:
+#             self.evaluation.update_parameter(next_status, has_memory=True)
+#             runtime, t_L = self.evaluation.runtime()
+#             runtime = runtime * 1000
+#             power, DSP = self.evaluation.power(), self.evaluation.DSP()
+#             energy = self.evaluation.energy()
+#             BW = self.evaluation.BW_total
+#             BRAM = self.evaluation.BRAM_total
 
-            self.constraints.update(
-                {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
-            )
+#             self.constraints.update(
+#                 {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
+#             )
 
-            if self.goal == "latency":
-                reward = 1000 / (runtime * self.constraints.get_punishment())
-                result = runtime
-            elif self.goal == "energy":
-                reward = 1000 / (energy * self.constraints.get_punishment())
-                result = energy
-            elif self.goal == "latency&energy":
-                reward = 1000 / ((runtime * energy) * self.constraints.get_punishment())
-                result = runtime * energy
+#             if self.goal == "latency":
+#                 reward = 1000 / (runtime * self.constraints.get_punishment())
+#                 result = runtime
+#             elif self.goal == "energy":
+#                 reward = 1000 / (energy * self.constraints.get_punishment())
+#                 result = energy
+#             elif self.goal == "latency&energy":
+#                 reward = 1000 / ((runtime * energy) * self.constraints.get_punishment())
+#                 result = runtime * energy
 
-            if (result < self.best_result) and self.constraints.is_all_meet():
-                self.best_result = result
-            if (reward > self.best_reward) and self.constraints.is_all_meet():
-                self.best_reward = reward
+#             if (result < self.best_result) and self.constraints.is_all_meet():
+#                 self.best_result = result
+#             if (reward > self.best_reward) and self.constraints.is_all_meet():
+#                 self.best_reward = reward
 
-            if not self.test:
-                self.sample_time += 1
-                print(
-                    f"{self.sample_time}\t{self.best_result}",
-                    end="\n",
-                    file=self.result_log,
-                )
+#             if not self.test:
+#                 self.sample_time += 1
+#                 print(
+#                     f"{self.sample_time}\t{self.best_result}",
+#                     end="\n",
+#                     file=self.result_log,
+#                 )
 
-        done = not not_done
+#         done = not not_done
 
-        return obs, reward, done, {}
+#         return obs, reward, done, {}
 
-    def sample(self, step):
-        idx = random.randint(0, self.design_space.get_dimension_scale(step) - 1)
-        pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
-        pi[idx] = 1
-        return pi
+#     def sample(self, step):
+#         idx = random.randint(0, self.design_space.get_dimension_scale(step) - 1)
+#         pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
+#         pi[idx] = 1
+#         return pi
 
 
 if __name__ == "__main__":
-    # 使用新函数创建设计空间
-    space = create_space('config.yaml')
+    from crldse.utils.core import read_config
+    conf_data = read_config('./config.yaml')
+    space = create_space(conf_data)
     space.print_status()
     print(space.get_obs())
     for i in range(space.get_length()):
         print(space.dimension_box[i].get_sample_box())
+    
+    # dimension_index = 1
+    # sample_range = int(2)
+    # current_index = space.get_dimension_current_index(dimension_index=dimension_index)
+    # sample_bottom = max(0, current_index - sample_range)
+    # sample_top = min(int(space.get_dimension_scale(dimension_index)), current_index + sample_range + 1)
+
+    # print(current_index)
+    # print(sample_bottom)
+    # print(sample_top)
+
     

@@ -1,4 +1,10 @@
-import yaml
+"""
+This file is mainly used to write several classes for constraint parameters.
+'constraint' represent a performance metric constraint, 'constraints' includes all 
+current constraint parameters. The specific constraint values for different 
+performance metrics are determined by different application platforms, 
+and the final performance metric is written in the ./config.yaml file
+"""
 
 class constraint:
     def __init__(self, name, threshold, threshold_ratio):
@@ -129,7 +135,7 @@ def print_config(constraints_conf):
     
 
 if __name__ == "__main__":
-    with open('./config.yaml', 'r') as file:
-        config_data = yaml.safe_load(file)
+    from crldse.utils.core import read_config
+    config_data = read_config('./config.yaml')
     test_conf = create_constraints_conf(config_data=config_data)
     print_config(test_conf)
