@@ -9,6 +9,7 @@ import yaml
 from crldse.env.space import design_space, create_space
 from crldse.env.eval import evaluation_function
 from crldse.env.constraints import create_constraints_conf
+from crldse.utils.core import read_config
 
 
 class MCPDseEnv(gym.Env):
@@ -81,8 +82,7 @@ class MCPDseEnv(gym.Env):
         self.sample_times = 0
 
         # init the design space and set constraint parameters
-        with open('./config.yaml', 'r') as file:
-            self.config = yaml.safe_load(file)
+        self.config = read_config('./config.yaml')
         self.constraints_conf = create_constraints_conf(config_data=self.config)
         self.design_space = create_space(config_data=self.config)
         assert isinstance(self.design_space, design_space)
@@ -96,7 +96,7 @@ class MCPDseEnv(gym.Env):
             self.action_limit_list.append(int(dimension.get_scale() - 1))
 
         # set eval function
-        self.evaluation = evaluation_function(target=self.config['target'])
+        self.eval_func = evaluation_function()
         
         self.result = 0
         self.steps = 6
@@ -129,7 +129,8 @@ class MCPDseEnv(gym.Env):
         # FIXME: Is it reasonable to set the logic of state transition to random sampling ?
         # Until here, the action is equal to a tensor[idx_dim1, idx_dim2, idx_dim3, ..., idx_dimn]
         # where the n refer to the design dims. Under current's occusion n = 8.
-        next_status = self.design_space.sample_one_dimension(self.steps)
+        
+        next_obs = self.design_space.sample_one_dimension(self.steps)
         obs = self.design_space.get_obs()
         
         # step1.5:
@@ -139,7 +140,7 @@ class MCPDseEnv(gym.Env):
             done = True
         
         if not done:
-            self.evaluation.update_parameter(next_status)
+            eval_res = self.eval_func.eval(next_obs)
             
             # step2: get the performance result by evaluation_function
 
@@ -148,7 +149,7 @@ class MCPDseEnv(gym.Env):
             energy = self.evaluation.energy()
             
             # TODO: step3: update the config.constraints's performance values 
-
+            self.constraints_conf.constraints.update(eval_res)
             # coumpute the reward
             reward = self.constraints_conf.constraints.get_punishment()
             punishment = 1 if reward == 0 else reward

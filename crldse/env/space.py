@@ -135,8 +135,7 @@ class design_space:
         return status_value
 
     def get_action_list(self) -> None:
-        """only return the value of action. e.g. [0, 0, 0, 0, 0, 0, 0, 0]
-        """
+        """only return the value of action. e.g. [0, 0, 0, 0, 0, 0, 0, 0]"""
         action_list = list()
         for item in self.dimension_box:
             action_list.append(item.get_current_index())

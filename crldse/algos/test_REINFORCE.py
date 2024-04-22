@@ -14,7 +14,7 @@ from crldse.env.eval import evaluation_function
 from crldse.actor import actor_e_greedy, actor_policyfunction
 from crldse.net import mlp_policyfunction
 from crldse.env.constraints import create_constraints_conf, print_config
-from crldse.env.gem5_mcpat_evaluation import evaluation
+from crldse.env.eval import evaluation_function
 from crldse.utils import core
 
 
@@ -146,7 +146,17 @@ class RLDSE:
         self.actor = actor_policyfunction()
 
         ##initial evaluation
-        self.evaluation = evaluation_function(self.target)
+        default_state = {
+            "core": 3,
+            "l1i_size": 256,
+            "l1d_size": 256,
+            "l2_size": 64,
+            "l1d_assoc": 8,
+            "l1i_assoc": 8,
+            "l2_assoc": 8,
+            "sys_clock": 2,
+        }
+        self.evaluation = evaluation_function(default_state, '../env/sim_config.yaml')
 
         # 7. Making pytorch optimizers
         self.policy_optimizer = torch.optim.Adam(self.policyfunction.parameters(),lr=self.ALPHA)
@@ -234,7 +244,8 @@ class RLDSE:
                     reward = float(0)
                     reward2 = float(0)
                 else:
-                    metrics = evaluation(next_status)
+                    
+                    metrics = self.evaluation.eval(next_status)
                     if metrics != None:
 
                         energy = metrics["latency"]

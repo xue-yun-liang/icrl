@@ -1,14 +1,10 @@
-import sys
 import re
-import os
-import json
-import types
-import math
-import random
 import subprocess as subp
 from optparse import OptionParser
 
 import numpy as np
+from crldse.env.sim import run_gem5_simulation, run_gem5_to_mcpat
+from crldse.utils.core import read_config
 
 mcpat_bin = "mcpat"
 
@@ -108,7 +104,7 @@ def read_mcpat(mcpatOutputFile):
     return (float(leakage), float(dynamic), float(Aera))
 
 
-def get_evaluation(index_1_mcpat, index_2_gem5):
+def get_eval_metrics(index_1_mcpat, index_2_gem5):
     """runs McPAT, return the total energy in mJs"""
     energy, runtime, Aera, power = get_energy(index_1_mcpat, index_2_gem5)
 
@@ -152,23 +148,81 @@ def get_time_from_stats(stats_file):
     F.close()
     return ret_val
 
-class evaluation_function:
-    # FIXME:这里evaluation_function是一个class，针对不同的target应该有不同的evaluate方法
-    def __init__(self, target: str) -> None:
-        self.target = target
-        if self.target == "embedded":
-            print("evaluated!")
 
-    def run_time(self) -> int:
-        return random.randint(1, 10)
-     
-    def energy(self) -> float:
-        return random.randint(1, 10)
+class evaluation_function:
+    """
+    A class that actually executes gem5 and mcpat, and returns the evaluation result metric
+    the eval process:
+        step1: Pass the design parameters of the state to gem5
+        step2: Convert the results of GEM5 to XML format
+        step3: Pass the gem5 output file in XML format to MCPAT
+    """
+
+    def __init__(self, state_dic, config_file) -> None:
+        self.state_dic = state_dic
+        self.eval_len = len(state_dic)
+        self.config_data = read_config(config_file)
+        
+
+    def eval(self, obs):
+        assert len(obs) == self.eval_len
+        for key, value in zip(self.state_dic.keys(), obs):
+            self.state_dic[key] = str(value)
+        # step1: Pass the design parameters of the state to gem5
+        self.sim_gem5()
+        # step2: Convert the results of GEM5 to XML format
+        # and extract the output file stats.txt of gem5
+        self.extract_gem5_output_to_xml()
+        # step3: Pass the gem5 output file in XML format to MCPAT
+        self.sim_mcpat()
+        return
+
+    def print_eval_obs(self) -> None:
+        print(self.state_dic)
+
     
-    def update_parameter(self, status) -> None:
-        return None
+    def sim_gem5(self):
+        print("-----------------------START SIMULATION-----------------------")
+        run_gem5_simulation(self.state_dic)
+        print("-----------------------END SIMULATER-----------------------")
+
+
+    def extract_gem5_output_to_xml(self):
+        """
+        Convert the results of gem5 to XML format and extract the output file stats.txt of gem5
+        """
+        print("-----------------------START DEVORE-----------------------")
+        f1 = open("/m5out/stats.txt")
+        ss = "---------- Begin Simulation Statistics ----------"
+        sr = f1.read().split(ss)
+        f1.close()
+        for i in range(len(sr)):
+            f = open("/m5out/%d.txt" % i, "w")
+            f.write(sr[i] if i == 0 else ss + sr[i])
+            f.close()
+        print("-----------------------END DEVORE-----------------------")
+
+
+    def sim_mcpat(self):
+        run_gem5_to_mcpat(state_dic=self.state_dic, config=self.config_data)
          
 
 if __name__=='__main__':
-    eval_ = evaluation_function("embedded")
+    default_state = {
+        "core": 3,
+        "l1i_size": 256,
+        "l1d_size": 256,
+        "l2_size": 64,
+        "l1d_assoc": 8,
+        "l1i_assoc": 8,
+        "l2_assoc": 8,
+        "sys_clock": 2,
+    }
+    
+    eval = evaluation_function(default_state)
+    eval.print_eval_obs()
+    obs = [1,2,3,4,5,6,7,8]
+    eval.eval(obs)
+    eval.print_eval_obs()
+
     

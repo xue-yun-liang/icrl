@@ -1,0 +1,10 @@
+paths:
+  gem5_out: "/m5out/3.txt"
+  mcpat_log: "/parsec-tests2/cmcpat/cMcPAT/mcpatresult/test2.log"
+  mcpat_script: "/parsec-tests2/cmcpat/cMcPAT/Scripts/test.xml"
+  gem5_script: "/parsec-tests2/cmcpat/cMcPAT/Scripts/GEM5ToMcPAT.py"
+  kernel_binary: "/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp"
+  disk_image: "/parsec-tests2/parsec-image/system/disks/x86root-parsec.img"
+  mcpat_binary: "/parsec-tests2/cmcpat/cMcPAT/mcpat/mcpat"
+  gem5_binary: "/parsec-tests2/gem5_2/gem5/build/X86/gem5.fast"
+  fs_script: "/parsec-tests2/gem5_2/gem5/configs/example/fs.py"

@@ -7,11 +7,11 @@ design_space:
   l1d_assoc: {default_val: 1,step: 1,rrange: [1,4]}
   l2_assoc: {default_val: 1,step: 1,rrange: [1,4]}
   sys_clock: {default_val: 2,step: 0.1,rrange: [2,4]}
-  
+
 constraints:
-  normal: {DSP_TH: 2800, POWER_TH: 60, BW_TH: 205, BRAW_TH: 37}
-  cloud: {DSP_TH: 6900, POWER_TH: 500, BW_TH: 385, BRAW_TH: 345.9}
-  embed: {DSP_TH: 900, POWER_TH: 20, BW_TH: 103, BRAW_TH: 4.9}
+  normal: {POWER_TH: 60, BW_TH: 205, BRAM_TH: 37}
+  cloud: {POWER_TH: 500, BW_TH: 385, BRAM_TH: 345.9}
+  embed: {POWER_TH: 20, BW_TH: 103, BRAM_TH: 4.9}
 
 target: normal  # specific platform, e.g. normal, cloud, embed
 goal: latency   # Actual optimization objectives, e.g. latency, energy, latency&energy
