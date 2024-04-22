@@ -91,7 +91,7 @@ class RLDSE:
         for dimension in self.DSE_action_space.dimension_box:
             action_scale_list.append(int(dimension.get_scale()))
         self.policyfunction = mlp_policyfunction(
-            self.DSE_action_space.get_lenth(), action_scale_list
+            self.DSE_action_space.get_length(), action_scale_list
         )
 
         ##initial e_greedy_policy_function
