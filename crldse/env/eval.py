@@ -189,18 +189,13 @@ class evaluation_function:
 
     def extract_gem5_output_to_xml(self):
         """
-        Convert the results of gem5 to XML format and extract the output file stats.txt of gem5
-        """
-        print("-----------------------START DEVORE-----------------------")
-        f1 = open("/m5out/stats.txt")
-        ss = "---------- Begin Simulation Statistics ----------"
-        sr = f1.read().split(ss)
-        f1.close()
-        for i in range(len(sr)):
-            f = open("/m5out/%d.txt" % i, "w")
-            f.write(sr[i] if i == 0 else ss + sr[i])
-            f.close()
-        print("-----------------------END DEVORE-------------------------")
+        Convert the results of gem5 to XML format and extract the output file stats.txt of gem5"""
+    def split_stats_file(idx):
+        with open(f"/app/out/simout{idx}/stats.txt") as f:
+            contents = f.read().split("---------- Begin Simulation Statistics ----------") 
+        for i, content in enumerate(contents):
+            with open(f"/app/out/simout{idx}/{i}.txt", "w") as f:
+                f.write(content if i == 0 else "---------- Begin Simulation Statistics ----------" + content)
 
 
     def sim_mcpat(self):

@@ -1,117 +1,106 @@
 import os
+import time
+import yaml
 from subprocess import Popen
 
 from crldse.env.eval import get_eval_metrics
-from crldse.utils.core import read_config
 
 
-def run_gem5_simulation(state_dic):
-    command_template = """
-        /parsec-tests2/gem5_2/gem5/build/X86/gem5.fast -re \
-        /parsec-tests2/gem5_2/gem5/configs/example/fs.py \
-        --script=/parsec-tests2/parsec-image/benchmark_src/canneal_{}c_simdev.rcS \
-        -F 5000000000  --cpu-type=TimingSimpleCPU --num-cpus={} \
-        --sys-clock='{}GHz' \
-        --caches --l2cache   \
-        --l1d_size='{}kB' \
-        --l1i_size='{}kB' \
-        --l2_size='{}kB' \
-        --l1d_assoc={} \
-        --l1i_assoc={} \
-        --l2_assoc={} \
-        --kernel=/parsec-tests2/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp \
-        --disk-image=/parsec-tests2/parsec-image/system/disks/x86root-parsec.img
-    """
-    
-    command = command_template.format(
-        state_dic["core"],
-        state_dic["core"],
-        state_dic["sys_clock"],
-        state_dic["l1d_size"],
-        state_dic["l1i_size"],
-        state_dic["l2_size"],
-        state_dic["l1d_assoc"],
-        state_dic["l1i_assoc"],
-        state_dic["l2_assoc"]
-    )
+def run_gem5_sim(obs, sim_config):
+    cmd = "./gem5/build/X86/gem5.fast -re ./gem5/configs/deprecated/example/fs.py \
+        --script=./parsec-image/benchmark_src/canneal_{}c_simdev.rcS -F 5000000000 \
+        --cpu-type=TimingSimpleCPU --num-cpus={} --sys-clock={}GHz --caches --l2cache \
+        --l1d_size={}kB --l1i_size={}kB --l2_size={}kB --l1d_assoc={} --l1i_assoc={} \
+        --l2_assoc={} --kernel=./parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp \
+        --disk-image=./parsec-image/system/disks/x86root-parsec.img".format(
+            obs["core"],
+            obs["core"],
+            obs["sys_clock"],
+            obs["l1d_size"],
+            obs["l1i_size"],
+            obs["l2_size"],
+            obs["l1d_assoc"],
+            obs["l1i_assoc"],
+            obs["l2_assoc"]
+        )
+    print(cmd)
+    process = Popen(cmd, shell=True)
+    process.wait()
+    return_code = process.returncode
+    if return_code == 0:
+        print("gem sim successfuly")
+    return
+        
+            
+def split_stats_file():
+    flag = "---------- Begin Simulation Statistics ----------"
+    with open("/app/m5out/stats.txt") as f:
+        contents = f.read().split(flag)
+    last_content = contents[-2]
 
-    # exection
-    os.system(command)
+    with open(f"/app/gem_sim_out/gem_output.txt", "w") as f:
+        f.write(flag+last_content)
 
 
-def run_gem5_to_mcpat(state_dic, config):
-    paths = config.get("paths", {})
+def run_mcpat(obs):
+    trans = Popen(["python3", f"/app/cMcPAT/Scripts/GEM5ToMcPAT.py", \
+        f"/app/gem_sim_out/gem_output.txt", f"/app/m5out/config.json", 
+        f"/app/cMcPAT/mcpat/ProcessorDescriptionFiles/x86_AtomicSimpleCPU_template_core_{obs['core']}.xml", 
+        "-o", f"/app/mcpat_in/test.xml"])
+    trans.wait()
 
-    gem5_out = paths.get("gem5_out")
-    mcpat_log = paths.get("mcpat_log")
-    mcpat_script = paths.get("mcpat_script")
-    gem5_script = paths.get("gem5_script")
-    kernel_binary = paths.get("kernel_binary")
-    disk_image = paths.get("disk_image")
-    mcpat_binary = paths.get("mcpat_binary")
-    gem5_binary = paths.get("gem5_binary")
-    fs_script = paths.get("fs_script")
+    with open("/app/mcpat_out/test.log", 'w') as file_output:
+        proc = Popen([f"/app/cMcPAT/mcpat/mcpat", "-infile", f"/app/mcpat_in/test.xml", "-print_level", "5"], stdout=file_output)
+        proc.wait()
+    if proc.returncode == 0:
+        print("mcpat sim successfuly")
+    metrics = get_eval_metrics(f"/app/mcpat_out/test.log", f"/app/gem_sim_out/gem_output.txt")
+    return metrics
 
-    if not os.path.exists(gem5_out):
-        print("File '{}' not found.".format(gem5_out))
-        return None
-
-    try:
-        print("-----------------------START GEM5 To McPAT-----------------------")
-        process2 = Popen([
-            "python3",
-            gem5_script,
-            gem5_out,
-            "/m5out/config.json",
-            f"/parsec-tests2/cmcpat/cMcPAT/mcpat/ProcessorDescriptionFiles/x86_AtomicSimpleCPU_template_core_{state_dic['core']}.xml",
-            "-o",
-            mcpat_script
-        ])
-        process2.wait()
-        print("-----------------------END GEM5 To McPAT-----------------------")
-
-        print("-----------------------START McPAT-----------------------")
-        with open(mcpat_log, "w") as file_output:
-            process3 = Popen([
-                mcpat_binary,
-                "-infile",
-                mcpat_script,
-                "-print_level",
-                "5"
-            ], stdout=file_output)
-            process3.wait()
-        print("-----------------------END McPAT-----------------------")
-
-        print("-----------------------START print ENERGY-----------------------")
-        eval_log_path = mcpat_log
-        metrics = get_eval_metrics(eval_log_path, gem5_out)
-        print("-----------------------END print ENERGY-----------------------")
-
-        os.remove(gem5_out)
-        os.remove(eval_log_path)
-        os.remove(mcpat_script)
-
-        return metrics
-    except Exception as e:
-        print("An error occurred:", str(e))
-        cleanup(paths)
-        return None
-
-def cleanup(paths):
-    for path in paths.values():
+def clean_up():
+    for path in [f"/app/gem_sim_out/gem_output.txt", f"/app/mcpat_in/test.xml", f"/app/mcpat_out/test.log"]:
         if os.path.exists(path):
             os.remove(path)
 
+def eval(obs):
+    with open('/app/icrl/crldse/env/sim_config.yaml', "r") as f:
+        sim_conf = yaml.safe_load(f)
+
+    start_gem5_sim_time = time.time()
+    print(f"============  start Gem5 simulator =============")
+    run_gem5_sim(obs, sim_conf)
+    print(f"============== end Gem5 simulator ==============")
+    end_gem5_sim_time = time.time()
+    print("gem sim cost time:", end_gem5_sim_time-start_gem5_sim_time)
+
+    split_stats_file()
+
+    start_mcpat_sim_time = time.time()
+    print(f"================== start McPAT ==================")
+    metrics = run_mcpat(obs)
+    print(f"===================  end McPAT ===================")
+    end_mcpat_sim_time = time.time()
+    print("mcpat sim cost time:", end_mcpat_sim_time-start_mcpat_sim_time)
+
+    if metrics:
+        print(f"Evaluation successfully.")
+        print(f"latency: {metrics['latency']} sec , Area: {metrics['Area']} mm^2 , energy: {metrics['energy']} mJ , power: {metrics['power']} W")
+    else:
+        print(f"Evaluation failed.")
+    
+    return metrics
+
 if __name__=="__main__":
-    config = read_config("sim_config.yaml")
-    state_dic = {
-        "core": 3,
-        "sys_clock": 2,
-        "l1d_size": 256,
+    default_obs = {
+        "core": 4,
         "l1i_size": 256,
-        "l2_size": 64,
-        "l1d_assoc": 8,
-        "l1i_assoc": 8,
-        "l2_assoc": 8,
+        "l1d_size": 256,
+        "l2_size": 256,
+        "l1d_assoc": 4,
+        "l1i_assoc": 4,
+        "l2_assoc": 4,
+        "sys_clock": 2.8,
     }
-    run_gem5_to_mcpat(state_dic, config)
+    clean_up()
+    res = eval(default_obs)
+    print(res)
