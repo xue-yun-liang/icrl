@@ -122,3 +122,12 @@ def get_kldivloss_and_log_prob(policyfunction, design_space, status, action_inde
 
 
 	return entropy, kldivloss, log_prob_sampled
+
+def sample_index_from_2d_array(array):
+    sampled_indices = []
+    for sub_array in array:
+        probabilities = torch.tensor(sub_array, dtype=torch.float)
+        probabilities /= torch.sum(probabilities)  # 将概率归一化为和为1
+        sampled_index = torch.multinomial(probabilities, 1).item()  # 使用multinomial进行抽样
+        sampled_indices.append(sampled_index)
+    return sampled_indices

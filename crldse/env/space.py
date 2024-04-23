@@ -1,4 +1,8 @@
 import numpy as np
+import torch
+import random
+
+from crldse.env.eval import evaluation_function
 
 class dimension_discrete:
     def __init__(
@@ -105,82 +109,98 @@ class design_space:
         self.length = self.length + 1
         self.scale = self.scale * dimension_discrete.get_scale()
 
-    def get_status(self) -> dict:
+    def get_state(self) -> dict:
         """
-        return a dict  that refer to a status"name":"dimension_value"
+        return a dict  that refer to a state"name":"dimension_value"
         e.g. {'core': 1, 'l1i_size': 1, 'l1d_size': 1, 'l2_size': 6,
         'l1d_assoc': 1, 'l1i_assoc': 1, 'l2_assoc': 1, 'sys_clock': 2}
         """
-        status = dict()
+        state = dict()
         for item in self.dimension_box:
-            status[item.get_name()] = item.get_current_value()
-        return status
+            state[item.get_name()] = item.get_current_value()
+        return state
 
-    def get_status_value(self) -> list:
-        """only return the value of statue. e.g. [1, 1, 1, 6, 1, 1, 1, 2]
+    def get_state_value(self) -> list:
         """
-        status_value = list()
+        only return the value of statue. e.g. [1, 1, 1, 6, 1, 1, 1, 2]
+        """
+        state_value = list()
         for item in self.dimension_box:
-            status_value.append(item.get_current_value())
-        return status_value
+            state_value.append(item.get_current_value())
+        return state_value
 
     def get_action_list(self) -> None:
-        """only return the value of action. e.g. [0, 0, 0, 0, 0, 0, 0, 0]"""
+        """
+        only return the value of action. e.g. [0, 0, 0, 0, 0, 0, 0, 0]
+        """
         action_list = list()
         for item in self.dimension_box:
             action_list.append(item.get_current_index())
         return action_list
 
-    def print_status(self) -> None:
-        """print the status in dict form"""
+    def print_state(self) -> None:
         for item in self.dimension_box:
             print(item.get_name(), item.get_current_value())
 
     def sample_one_dimension(self, dimension_index) -> dict:
         assert dimension_index >= 0 and dimension_index <= self.length - 1
         self.dimension_box[dimension_index].sample()
-        return self.get_status()
+        return self.get_state()
 
     def set_one_dimension(self, dimension_index, sample_index) -> dict:
         assert dimension_index >= 0 and dimension_index <= self.length - 1
         self.dimension_box[dimension_index].set(sample_index)
-        return self.get_status()
+        return self.get_state()
 
-    def set_status(self, best_action_list) -> dict:
+    def set_state(self, best_action_list) -> dict:
         for dimension, action in zip(self.dimension_box, best_action_list):
             dimension.set(action)
-        return self.get_status()
+        return self.get_state()
 
-    def original_set_status(self, best_action_list) -> dict:
-        """set the default_index and default_value"""
+    def original_set_state(self, best_action_list) -> dict:
+        """
+        set the default_index and default_value
+        """
         for dimension, action in zip(self.dimension_box, best_action_list):
             dimension.original_set(action)
-        return self.get_status()
+        return self.get_state()
 
-    def reset_status(self) -> dict:
-        """restore status to default index and default values"""
+    def reset_state(self) -> dict:
+        """
+        restore state to default index and default values
+        """
         for dimension in self.dimension_box:
             dimension.reset()
-        return self.get_status()
+        return self.get_state()
 
     def get_length(self):
-        """the length of dimension_box"""
+        """
+        the length of dimension_box
+        """
         return self.length
 
     def get_scale(self):
-        """the total number of design points"""
+        """
+        the total number of design points
+        """
         return self.scale
 
     def get_dimension_current_index(self, dimension_index):
-        """return a index of given dims"""
+        """
+        return a index of given dims
+        """
         return self.dimension_box[dimension_index].get_current_index()
 
     def get_dimension_scale(self, dimension_index):
-        """return the scale of given dims"""
+        """
+        return the scale of given dims
+        """
         return self.dimension_box[dimension_index].get_scale()
 
     def get_dimension_sample_box(self, dimension_index):
-        """return the sample_box of given dims"""
+        """
+        return the sample_box of given dims
+        """
         return self.dimension_box[dimension_index].sample_box
 
     def froze_one_dimension(self, dimension_index):
@@ -198,7 +218,7 @@ class design_space:
             self.release_one_dimension(index)
 
     def get_obs(self):
-        """the actual value of current status"""
+        """the actual value of current state"""
         obs_list = list()
         for item in self.dimension_box:
             obs_list.append(item.get_norm_current_value())
@@ -221,168 +241,168 @@ def create_space(config_data):
     return DSE_action_space
 
 
-# class environment_erdse:
+class environment_erdse:
 
-#     def __init__(
-#         self,
-#         layer_num,
-#         model,
-#         target,
-#         goal,
-#         constraints,
-#         nlabel,
-#         algo,
-#         test=False,
-#         delay_reward=True,
-#     ):
-#         self.layer_num = layer_num
-#         self.model = model
-#         self.target = target
-#         self.goal = goal
-#         self.constraints = constraints
-#         self.nlabel = nlabel
-#         self.algo = algo
-#         self.test = test
-#         self.delay_reward = delay_reward
+    def __init__(
+        self,
+        layer_num,
+        model,
+        target,
+        goal,
+        constraints,
+        nlabel,
+        algo,
+        test=False,
+        delay_reward=True,
+    ):
+        self.layer_num = layer_num
+        self.model = model
+        self.target = target
+        self.goal = goal
+        self.constraints = constraints
+        self.nlabel = nlabel
+        self.algo = algo
+        self.test = test
+        self.delay_reward = delay_reward
 
-#         self.best_result = 1e10
-#         self.best_reward = 0
-#         self.sample_time = 0
+        self.best_result = 1e10
+        self.best_reward = 0
+        self.sample_time = 0
 
-#         print(f"Period\tResult", end="\n", file=self.result_log)
+        print(f"Period\tResult", end="\n", file=self.result_log)
 
-#         # the next one line actural: self.design_space = create_space_erdse()
-#         with open('config.yaml', 'r') as file:
-#             config_data = yaml.safe_load(file)
-#         self.design_space = create_space(config_data=config_data)
+        # the next one line actural: self.design_space = create_space_erdse()
+        from crldse.utils.core import read_config
+        config_data = read_config('config.yaml')
+        self.design_space = create_space(config_data=config_data)
 
-#         self.design_space_dimension = self.design_space.get_length()
-#         self.action_dimension_list = list()
-#         self.action_limit_list = list()
-#         for dimension in self.design_space.dimension_box:
-#             self.action_dimension_list.append(int(dimension.get_scale()))
-#             self.action_limit_list.append(int(dimension.get_scale() - 1))
+        self.design_space_dimension = self.design_space.get_length()
+        self.action_dimension_list = list()
+        self.action_limit_list = list()
+        for dimension in self.design_space.dimension_box:
+            self.action_dimension_list.append(int(dimension.get_scale()))
+            self.action_limit_list.append(int(dimension.get_scale() - 1))
 
-#         self.evaluation = evaluation_function(self.model, self.target)
+        self.evaluation = evaluation_function(self.model, self.target)
 
-#     def reset(self):
-#         self.design_space.status_reset()
-#         return self.design_space.get_obs()
+    def reset(self):
+        self.design_space.state_reset()
+        return self.design_space.get_obs()
 
-#     def step(self, step, act, deterministic=False):
-#         if deterministic:
-#             act = torch.argmax(torch.as_tensor(act).view(-1) if not torch.is_tensor(act) \
-#                 else torch.argmax(act, dim=-1).item(), dim=-1).item()
-#         else:
-#             if self.algo == "SAC":
-#                 act = act if torch.is_tensor(act) else torch.as_tensor(act, dtype=torch.float32).view(-1)
-#                 act = torch.softmax(act, dim=-1)
-#                 # sample act based on the probability of the result of act softmax
-#                 act = int(act.multinomial(num_samples=1).data.item())
-#             elif self.algo == "PPO":
-#                 pass
+    def step(self, step, act, deterministic=False):
+        if deterministic:
+            act = torch.argmax(torch.as_tensor(act).view(-1) if not torch.is_tensor(act) \
+                else torch.argmax(act, dim=-1).item(), dim=-1).item()
+        else:
+            if self.algo == "SAC":
+                act = act if torch.is_tensor(act) else torch.as_tensor(act, dtype=torch.float32).view(-1)
+                act = torch.softmax(act, dim=-1)
+                # sample act based on the probability of the result of act softmax
+                act = int(act.multinomial(num_samples=1).data.item())
+            elif self.algo == "PPO":
+                pass
 
-#         current_status = self.design_space.get_status()
-#         next_status = self.design_space.sample_one_dimension(step, act)
-#         obs = self.design_space.get_obs()
+        current_state = self.design_space.get_state()
+        next_state = self.design_space.sample_one_dimension(step, act)
+        obs = self.design_space.get_obs()
 
-#         if step < (self.design_space.get_length() - 1):
-#             not_done = 1
-#         else:
-#             not_done = 0
+        if step < (self.design_space.get_length() - 1):
+            not_done = 1
+        else:
+            not_done = 0
 
-#         if not_done:
-#             if self.delay_reward:
-#                 reward = float(0)
-#             else:
-#                 self.evaluation.update_parameter(next_status, has_memory=True)
-#                 runtime, t_L = self.evaluation.runtime()
-#                 runtime = runtime * 1000
-#                 power, DSP = self.evaluation.power(), self.evaluation.DSP()
-#                 energy = self.evaluation.energy()
-#                 BW = self.evaluation.BW_total
-#                 BRAM = self.evaluation.BRAM_total
+        if not_done:
+            if self.delay_reward:
+                reward = float(0)
+            else:
+                self.evaluation.update_parameter(next_state, has_memory=True)
+                runtime, t_L = self.evaluation.runtime()
+                runtime = runtime * 1000
+                power, DSP = self.evaluation.power(), self.evaluation.DSP()
+                energy = self.evaluation.energy()
+                BW = self.evaluation.BW_total
+                BRAM = self.evaluation.BRAM_total
 
-#                 self.constraints.update(
-#                     {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
-#                 )
+                self.constraints.update(
+                    {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
+                )
 
-#                 if self.goal == "latency":
-#                     reward = 1000 / (runtime * self.constraints.get_punishment())
-#                     result = runtime
-#                 elif self.goal == "energy":
-#                     reward = 1000 / (energy * self.constraints.get_punishment())
-#                     result = energy
-#                 elif self.goal == "latency&energy":
-#                     reward = 1000 / (
-#                         (runtime * energy) * self.constraints.get_punishment()
-#                     )
-#                     result = runtime * energy
+                if self.goal == "latency":
+                    reward = 1000 / (runtime * self.constraints.get_punishment())
+                    result = runtime
+                elif self.goal == "energy":
+                    reward = 1000 / (energy * self.constraints.get_punishment())
+                    result = energy
+                elif self.goal == "latency&energy":
+                    reward = 1000 / (
+                        (runtime * energy) * self.constraints.get_punishment()
+                    )
+                    result = runtime * energy
 
-#                 if (result < self.best_result) and self.constraints.is_all_meet():
-#                     self.best_result = result
-#                 if (reward > self.best_reward) and self.constraints.is_all_meet():
-#                     self.best_reward = reward
+                if (result < self.best_result) and self.constraints.is_all_meet():
+                    self.best_result = result
+                if (reward > self.best_reward) and self.constraints.is_all_meet():
+                    self.best_reward = reward
 
-#                 if not self.test:
-#                     self.sample_time += 1
-#                     print(
-#                         f"{self.sample_time}\t{self.best_result}",
-#                         end="\n",
-#                         file=self.result_log,
-#                     )
-#         else:
-#             self.evaluation.update_parameter(next_status, has_memory=True)
-#             runtime, t_L = self.evaluation.runtime()
-#             runtime = runtime * 1000
-#             power, DSP = self.evaluation.power(), self.evaluation.DSP()
-#             energy = self.evaluation.energy()
-#             BW = self.evaluation.BW_total
-#             BRAM = self.evaluation.BRAM_total
+                if not self.test:
+                    self.sample_time += 1
+                    print(
+                        f"{self.sample_time}\t{self.best_result}",
+                        end="\n",
+                        file=self.result_log,
+                    )
+        else:
+            self.evaluation.update_parameter(next_state, has_memory=True)
+            runtime, t_L = self.evaluation.runtime()
+            runtime = runtime * 1000
+            power, DSP = self.evaluation.power(), self.evaluation.DSP()
+            energy = self.evaluation.energy()
+            BW = self.evaluation.BW_total
+            BRAM = self.evaluation.BRAM_total
 
-#             self.constraints.update(
-#                 {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
-#             )
+            self.constraints.update(
+                {"DSP": DSP, "POWER": power, "BW": BW, "BRAM": BRAM}
+            )
 
-#             if self.goal == "latency":
-#                 reward = 1000 / (runtime * self.constraints.get_punishment())
-#                 result = runtime
-#             elif self.goal == "energy":
-#                 reward = 1000 / (energy * self.constraints.get_punishment())
-#                 result = energy
-#             elif self.goal == "latency&energy":
-#                 reward = 1000 / ((runtime * energy) * self.constraints.get_punishment())
-#                 result = runtime * energy
+            if self.goal == "latency":
+                reward = 1000 / (runtime * self.constraints.get_punishment())
+                result = runtime
+            elif self.goal == "energy":
+                reward = 1000 / (energy * self.constraints.get_punishment())
+                result = energy
+            elif self.goal == "latency&energy":
+                reward = 1000 / ((runtime * energy) * self.constraints.get_punishment())
+                result = runtime * energy
 
-#             if (result < self.best_result) and self.constraints.is_all_meet():
-#                 self.best_result = result
-#             if (reward > self.best_reward) and self.constraints.is_all_meet():
-#                 self.best_reward = reward
+            if (result < self.best_result) and self.constraints.is_all_meet():
+                self.best_result = result
+            if (reward > self.best_reward) and self.constraints.is_all_meet():
+                self.best_reward = reward
 
-#             if not self.test:
-#                 self.sample_time += 1
-#                 print(
-#                     f"{self.sample_time}\t{self.best_result}",
-#                     end="\n",
-#                     file=self.result_log,
-#                 )
+            if not self.test:
+                self.sample_time += 1
+                print(
+                    f"{self.sample_time}\t{self.best_result}",
+                    end="\n",
+                    file=self.result_log,
+                )
 
-#         done = not not_done
+        done = not not_done
 
-#         return obs, reward, done, {}
+        return obs, reward, done, {}
 
-#     def sample(self, step):
-#         idx = random.randint(0, self.design_space.get_dimension_scale(step) - 1)
-#         pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
-#         pi[idx] = 1
-#         return pi
+    def sample(self, step):
+        idx = random.randint(0, self.design_space.get_dimension_scale(step) - 1)
+        pi = torch.zeros(int(self.design_space.get_dimension_scale(step)))
+        pi[idx] = 1
+        return pi
 
 
 if __name__ == "__main__":
     from crldse.utils.core import read_config
     conf_data = read_config('./config.yaml')
     space = create_space(conf_data)
-    space.print_status()
+    space.print_state()
     print(space.get_obs())
     for i in range(space.get_length()):
         print(space.dimension_box[i].get_sample_box())

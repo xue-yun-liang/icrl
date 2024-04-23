@@ -4,12 +4,11 @@ from typing import Optional, Union
 import numpy as np
 import torch
 import gym
-import yaml
 
 from crldse.env.space import design_space, create_space
 from crldse.env.eval import evaluation_function
 from crldse.env.constraints import create_constraints_conf
-from crldse.utils.core import read_config
+from crldse.utils.core import read_config, sample_index_from_2d_array
 
 
 class MCPDseEnv(gym.Env):
@@ -97,54 +96,17 @@ class MCPDseEnv(gym.Env):
 
         # set eval function
         self.eval_func = evaluation_function()
-        
-        self.result = 0
-        self.steps = 6
 
-    def step(self, action):
-        print("enter step")
-        # FIXME: fix the code here
-        # the logics in  here (ignore all processes for data):
-        # step1: give the action for design space, then design space give a new obs for next state
-        # step2: the evaluation function give the performance result for next state
-        # step3: the config.constraints update the performance values by the new performance result \
-            # and the reward could be compute by the config.constraints.get_punishment()
-                                    
-        # action(policy's reult) ---(step1:transition)--->  next_state (sampled in design space) ---------------------------------------|
-        # reward <---(step3: update the config.constraints)--- evalued result(preformace's indicators)<---(step2:evaluation_function)---| 
+    def step(self, action):                       
+        # step1: give the 'act' for design_space, which return the next_obs
+        sample_idx = sample_index_from_2d_array(act)
+        self.design_space.set_state(sample_idx)
+        next_obs = self.design_space.get_obs()
         
-        # NOTE* when we got the next state, need to adjust whether we arrive the 'done' state
-        
-        # FIXME: next four lines code only for SAC algo
-        
-        # For pre-processing of actions
-        action = action if torch.is_tensor(action) else \
-            torch.as_tensor(action, dtype=torch.float32).view(-1)
-        action = torch.softmax(action, dim=-1)
-        # sample actual current act based on the probability of the result of act softmax
-        action = int(action.multinomial(num_samples=1).data.item())
-        
-        # step1: give the action for design space, get the next_statue
-        current_status = self.design_space.get_status()
-        # FIXME: Is it reasonable to set the logic of state transition to random sampling ?
-        # Until here, the action is equal to a tensor[idx_dim1, idx_dim2, idx_dim3, ..., idx_dimn]
-        # where the n refer to the design dims. Under current's occusion n = 8.
-        
-        next_obs = self.design_space.sample_one_dimension(self.steps)
-        obs = self.design_space.get_obs()
-        
-        # step1.5:
-        if self.steps < (self.design_space.get_length() - 1):
-            done = False
-        else:
-            done = True
-        
+        done = False if self.sample_times <= 50 else True
         if not done:
+            # step2: the eval funct give the performance result for next obs
             eval_res = self.eval_func.eval(next_obs)
-            
-            # step2: get the performance result by evaluation_function
-
-            # get evaluation info
             runtime= self.evaluation.run_time()*1000
             energy = self.evaluation.energy()
             
@@ -162,19 +124,22 @@ class MCPDseEnv(gym.Env):
                 self.result = runtime * energy
 
         self.sample_times += 1
-        # the step function need to return next_state, reward, done, metadata
-        return obs, reward, done, {}
+        
+        # finally, the step func return next_state, reward, done, metadata
+        return next_obs, reward, done, {}
 
     def reset(self):
         self.design_space.reset_status()
         return self.design_space.get_obs()
 
-    def sample(self):
-        # here step refer to the idx of the design dimension
-        idx = np.random.randint(0, self.design_space.get_dimension_scale(self.steps) - 1)
-        # pi if a ont hot tensor, that refer to which dim will be act 
-        pi = torch.zeros(int(self.design_space.get_dimension_scale(self.steps)))
-        pi[idx] = 1
+    def sample_act(self):
+        pi = []
+        for i in range(self.design_space.get_length()):
+            cur_scale = self.design_space.get_dimension_scale(i)
+            sample_idx = np.random.randint(0,  cur_scale - 1)
+            pi_i = torch.zeros(int(cur_scale))
+            pi_i[sample_idx] = 1
+            pi.append(pi_i)
         return pi
 
 

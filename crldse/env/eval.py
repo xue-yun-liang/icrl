@@ -182,7 +182,7 @@ class evaluation_function:
 
     
     def sim_gem5(self):
-        print("-----------------------START SIMULATION-----------------------")
+        print("----------------------START SIMULATION---------------------")
         run_gem5_simulation(self.state_dic)
         print("-----------------------END SIMULATER-----------------------")
 
@@ -200,7 +200,7 @@ class evaluation_function:
             f = open("/m5out/%d.txt" % i, "w")
             f.write(sr[i] if i == 0 else ss + sr[i])
             f.close()
-        print("-----------------------END DEVORE-----------------------")
+        print("-----------------------END DEVORE-------------------------")
 
 
     def sim_mcpat(self):
