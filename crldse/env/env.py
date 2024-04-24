@@ -107,21 +107,22 @@ class MCPDseEnv(gym.Env):
         if not done:
             # step2: the eval funct give the performance result for next obs
             eval_res = self.eval_func.eval(next_obs)
-            runtime= self.evaluation.run_time()*1000
-            energy = self.evaluation.energy()
+            # eval_res has {'latency', 'Area', 'energy', 'power'}
+            latency = eval_res['latency']*1000
+            energy = eval_res['energy']
             
             # TODO: step3: update the config.constraints's performance values 
             self.constraints_conf.constraints.update(eval_res)
             # coumpute the reward
             reward = self.constraints_conf.constraints.get_punishment()
             punishment = 1 if reward == 0 else reward
-            reward = 1000 / (runtime * punishment)
+            reward = 1000 / (latency * punishment)
             if self.config['goal'] == "latency":
-                self.result = runtime
+                self.result = latency
             elif self.config['goal'] == "energy":
                 self.result = energy
             elif self.config['goal'] == "latency&energy":
-                self.result = runtime * energy
+                self.result = latency * energy
 
         self.sample_times += 1
         

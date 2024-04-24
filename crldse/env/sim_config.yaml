@@ -1,11 +1,8 @@
 paths:
-  gem5_out: "/app/gem5_splited_out"
-  mcpat_out: "/app/mcpat_out"
-  mcpat_log: "/app/cmcpat/cMcPAT/mcpatresult/test2.log"
-  mcpat_script: "/app/cmcpat/cMcPAT/Scripts/test.xml"
-  gem5_script: "/app/cmcpat/cMcPAT/Scripts/GEM5ToMcPAT.py"
-  kernel_binary: "/app/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp"
-  disk_image: "/app/parsec-image/system/disks/x86root-parsec.img"
-  mcpat_binary: "/app/cmcpat/cMcPAT/mcpat/mcpat"
-  gem5_binary: "/app/gem5/build/X86/gem5.fast"
-  fs_script: "/app/gem5/configs/example/fs.py"
+  gem5_build: /app/gem5/build/X86/gem5.fast
+  fs_config: /app/gem5/configs/deprecated/example/fs.py
+  script: /app/parsec-image/benchmark_src/canneal_{}c_simdev.rcS
+  kernel: /app/parsec-image/system/binaries/x86_64-vmlinux-2.6.28.4-smp
+  disk_image: /app/parsec-image/system/disks/x86root-parsec.img
+  gem5_origin_out: /app/m5out/stats.txt
+  gem5_split_out: /app/gem_sim_out/gem_output.txt
