@@ -8,21 +8,21 @@ Since some of the previous reinforcement learning methods for processor design s
 ## Quick Start
 
 ### 1. prepare for simulation envirmoent
-'''shell
+```bash
 docker pull lucifercn22/dse-cpu:v2.0.0
 docker run -it --net=host --name=dse lucifercn22/dse-cpu:v2.0.0 bash
-'''
+```
 ### 2. prepare python envirmoent
-'''shell
+```bash
 git clone https://github.com/xue-yun-liang/icrl.git
 conda create -n icrl python==3.8
 conda activate icrl
 pip install requirement.txt
-'''
+```
 ### 3. test install
 Firstly, the following python commands need to be executed
-'''python
+```bash
 python3 ./crldse/env/eval.py
-'''
+```
 Then, if you see the interface below, it indicates that the environment for evaluating the function is not a problem and you can start other development.
-![Alternative text](../../eval_res.png "optional title")
+![eval_res](./asset//eval_res.png)
