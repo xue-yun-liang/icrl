@@ -12,12 +12,12 @@ def read_config(filename):
     with open(filename, "r") as f:
         return yaml.safe_load(f)
     
-def status_normalize(status, design_space):
-	status_copy = dict()
+def state_normalize(state, design_space):
+	state_copy = dict()
 	for item in design_space.dimension_box:
 		name = item.get_name()
-		status_copy[name] = status[name] / item.get_range_upbound()
-	return status_copy
+		state_copy[name] = state[name] / item.get_range_upbound()
+	return state_copy
 
 def action_value_normalize(action_list, design_space):
 	action_list_copy = list()
@@ -36,25 +36,25 @@ def compute_action_distance(action_list_a, action_list_b, design_space):
 def action_normalize(action_tensor, design_space, step):
 	action_tensor = action_tensor / (design_space.get_dimension_scale(step)-1)
 
-def status_to_list(status):
+def state_to_list(state):
 	_list = []
-	for index in status:
-		_list.append(status[index])
+	for index in state:
+		_list.append(state[index])
 	return _list
 
-def status_to_torch_tensor(status):
-	_list = status_to_list(status)
+def state_to_torch_tensor(state):
+	_list = state_to_list(state)
 	_ndarray = np.array(_list)
 	_tensor = torch.from_numpy(_ndarray)
 	return _tensor
 
-def status_to_Variable(status):
+def state_to_Variable(state):
 	"""
-	Convert 'status' to torch.sensor,then wrap the tensor into a PyTorch 
+	Convert 'state' to torch.sensor,then wrap the tensor into a PyTorch 
  	Variable object, which is typically used to represent nodes 
   	in a computational graph and allows for automatic differentiation
 	"""
-	_tensor = status_to_torch_tensor(status)
+	_tensor = state_to_torch_tensor(state)
 	_Variable = torch.autograd.Variable(_tensor).float()
 	return _Variable	
 
@@ -87,9 +87,9 @@ def get_normal_tensor(design_space, action_index, dimension_index, model_sigma):
 	normal_tensor = normal_tensor / normal_tensor.sum()
 	return normal_tensor
 
-def get_log_prob(policyfunction, design_space, status, action_index, dimension_index):
-	status_normalization = status_normalize(status, design_space)
-	probs = policyfunction(status_to_Variable(status_normalization), dimension_index)
+def get_log_prob(policyfunction, design_space, state, action_index, dimension_index):
+	state_normalization = state_normalize(state, design_space)
+	probs = policyfunction(state_to_Variable(state_normalization), dimension_index)
 	#### compute entropy
 	entropy = -(probs * probs.log()).sum()
 	#### use multinomial to realize the sampling of policy function
@@ -101,9 +101,9 @@ def get_log_prob(policyfunction, design_space, status, action_index, dimension_i
 
 	return entropy, log_prob_sampled
 
-def get_kldivloss_and_log_prob(policyfunction, design_space, status, action_index, dimension_index):
-	status_normalization = status_normalize(status, design_space)
-	probs = policyfunction(status_to_Variable(status_normalization), dimension_index)
+def get_kldivloss_and_log_prob(policyfunction, design_space, state, action_index, dimension_index):
+	state_normalization = state_normalize(state, design_space)
+	probs = policyfunction(state_to_Variable(state_normalization), dimension_index)
 	#### compute entropy
 	entropy = -(probs * probs.log()).sum()
 	#### compute kl div between probs and target distribution

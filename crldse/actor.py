@@ -114,7 +114,7 @@ class actor_policyfunction():
 
 
 	def action_choose_with_no_grad(self, policyfunction, design_space, dimension_index, std = 0.1, is_train = True):
-		status = design_space.get_status()
+		status = design_space.get_state()
 		with torch.no_grad():
 			status_normalization = core.status_normalize(status, design_space)
 			probs = policyfunction(core.status_to_Variable(status_normalization), dimension_index)

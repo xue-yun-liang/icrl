@@ -8,10 +8,9 @@ import torch
 import xlwt
 
 from crldse.actor import actor_e_greedy, actor_policyfunction
-from crldse.constraints import test_config
+from crldse.env.constraints import test_config
 from crldse.env.space import dimension_discrete, design_space, create_space
 from crldse.env.eval import evaluation_function
-from crldse.env.gem5_mcpat_evaluation import evaluation
 
 debug = False
 
@@ -75,7 +74,7 @@ class RLDSE:
         self.worksheet.write(0, 2, "loss")
 
         ## initial DSE_action_space
-        self.DSE_action_space = create_space_gem5()
+        self.DSE_action_space = create_space()
 
         # define the hyperparameters
         self.SAMPLE_PERIOD_BOUND = 1

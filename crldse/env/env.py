@@ -4,6 +4,7 @@ from typing import Optional, Union
 import numpy as np
 import torch
 import gym
+import yaml
 
 from crldse.env.space import design_space, create_space
 from crldse.env.eval import evaluation_function
@@ -81,7 +82,8 @@ class MCPDseEnv(gym.Env):
         self.sample_times = 0
 
         # init the design space and set constraint parameters
-        self.config = read_config('./config.yaml')
+        with open('/app/icrl/crldse/env/config.yaml', "r") as f:
+            self.config = yaml.safe_load(f)
         self.constraints_conf = create_constraints_conf(config_data=self.config)
         self.design_space = create_space(config_data=self.config)
         assert isinstance(self.design_space, design_space)
@@ -93,11 +95,16 @@ class MCPDseEnv(gym.Env):
         for dimension in self.design_space.dimension_box:
             self.action_dimension_list.append(int(dimension.get_scale()))
             self.action_limit_list.append(int(dimension.get_scale() - 1))
+        self.constraint_name_list = []
+        # store every constraint's name,(before the name is "NAME_TH")
+        for cons in self.constraints_conf.constraints.constraint_list:
+            self.constraint_name_list.append(cons.get_name())
+        print(self.constraint_name_list)
 
         # set eval function
-        self.eval_func = evaluation_function()
+        self.eval_func = evaluation_function(self.design_space.get_state())
 
-    def step(self, action):                       
+    def step(self, act):                       
         # step1: give the 'act' for design_space, which return the next_obs
         sample_idx = sample_index_from_2d_array(act)
         self.design_space.set_state(sample_idx)
@@ -111,8 +118,13 @@ class MCPDseEnv(gym.Env):
             latency = eval_res['latency']*1000
             energy = eval_res['energy']
             
-            # TODO: step3: update the config.constraints's performance values 
-            self.constraints_conf.constraints.update(eval_res)
+            # TODO: step3: update the config.constraints's performance values
+            constraint_new_val = {}
+            for indicator_name, indicator_val in eval_res.items():
+                cur_th_name = indicator_name.upper()+"_TH"
+                if cur_th_name in self.constraint_name_list:
+                    constraint_new_val[cur_th_name] = indicator_val
+            self.constraints_conf.constraints.update(constraint_new_val)
             # coumpute the reward
             reward = self.constraints_conf.constraints.get_punishment()
             punishment = 1 if reward == 0 else reward
@@ -130,7 +142,7 @@ class MCPDseEnv(gym.Env):
         return next_obs, reward, done, {}
 
     def reset(self):
-        self.design_space.reset_status()
+        self.design_space.reset_state()
         return self.design_space.get_obs()
 
     def sample_act(self):
@@ -149,10 +161,8 @@ if __name__ == "__main__":
     env = gym.make("MCPDseEnv-v0")
     obs = env.reset()
     print(obs)
-    for i in range(10):
-        print("the {}th epoch".format(i))
-        act = env.sample()
+    for _ in range(10):
+        act = env.sample_act()
         print(act)
-        observation, reward, done, info = env.step(act) # take a random action
-        print('observation:{}, reward:{}, done:{}, info:{}'.format(observation, reward, done, info))
-    
+        next_obs, reward, done, info = env.step(act) # take a random action
+        print('observation:{}, reward:{}, done:{}, info:{}'.format(next_obs, reward, done, info))

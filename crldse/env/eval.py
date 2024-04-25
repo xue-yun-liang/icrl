@@ -160,6 +160,8 @@ def getTimefromStats(statsFile):
 def run_gem5_sim(obs, sim_config):
     print(obs)
     """sim step1: pass the design parameters of the state to gem5"""
+    # if the cache size is too small, mcpat will return error
+    # so, need to give a new lower bound or if we get error, give a done for env
     cmd = "/app/gem5/build/X86/gem5.fast -re /app/gem5/configs/deprecated/example/fs.py \
         --script=/app/parsec-image/benchmark_src/canneal_{}c_simdev.rcS -F 5000000000 \
         --cpu-type=TimingSimpleCPU --num-cpus={} --sys-clock={}GHz --caches --l2cache \
@@ -182,7 +184,7 @@ def run_gem5_sim(obs, sim_config):
 def split_stats_file():
     """sim step2: spilt the stats.txt(out file) of gem5 by flag, and get the 4th file as out file"""
     flag = "---------- Begin Simulation Statistics ----------"
-    with open("/app/m5out/stats.txt") as f:
+    with open("./m5out/stats.txt") as f:
         contents = f.read().split(flag)
     last_content = contents[-2]
 
@@ -203,9 +205,11 @@ def run_mcpat(obs):
         proc.wait()
     if proc.returncode == 0:
         print("mcpat sim successfuly")
+        metrics = getevaluation(f"/app/mcpat_out/test.log", f"/app/gem_sim_out/gem_output.txt")
     else:
         print("mcpat sim fail")
-    metrics = getevaluation(f"/app/mcpat_out/test.log", f"/app/gem_sim_out/gem_output.txt")
+        metrics = {"latency":1, "Area":1, "power":1, "energy":1}
+    
     return metrics
 
 
@@ -251,7 +255,7 @@ class evaluation_function:
         self.obs = obs
         self.eval_len = len(obs)
         self.config_data = None
-        self.metrics = sim_func(self.obs, self.config_data)
+        self.metrics = None
     
 
     def eval(self, obs_in):
@@ -281,7 +285,7 @@ if __name__=='__main__':
     
     eval = evaluation_function(default_obs)
     eval.print_eval_res()
-    obs = [4,256,256,256,2,2,2,2.8]
+    obs = [4,256,256,512,2,2,2,2.8]
     eval.eval(obs)
     eval.print_eval_res()
 

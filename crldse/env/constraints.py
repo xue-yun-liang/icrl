@@ -135,7 +135,11 @@ def print_config(constraints_conf):
     
 
 if __name__ == "__main__":
+    import yaml
     from crldse.utils.core import read_config
-    config_data = read_config('./config.yaml')
+    with open('/app/icrl/crldse/env/config.yaml', "r") as f:
+        config_data = yaml.safe_load(f)
     test_conf = create_constraints_conf(config_data=config_data)
     print_config(test_conf)
+    for cons_i in test_conf.constraints.constraint_list:
+        print(cons_i.get_name()[:-3])

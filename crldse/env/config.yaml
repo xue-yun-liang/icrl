@@ -10,9 +10,9 @@ design_space:
 
 constraints:
   # FIXME: give more reasonable value
-  normal: {POWER_TH: 60, AREA_TH: 100}
-  cloud: {POWER_TH: 500, AREA_TH: 400}
-  embed: {POWER_TH: 20, AREA_TH: 50}
+  normal: {AREA_TH: 100, POWER_TH: 60}
+  cloud: {AREA_TH: 400, POWER_TH: 500}
+  embed: {AREA_TH: 50, POWER_TH: 20}
 
 target: normal  # specific platform, e.g. normal, cloud, embed
 goal: latency   # Actual optimization objectives, e.g. latency, energy, latency&energy

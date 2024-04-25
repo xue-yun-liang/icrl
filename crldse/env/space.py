@@ -146,7 +146,13 @@ class design_space:
         assert dimension_index >= 0 and dimension_index <= self.length - 1
         self.dimension_box[dimension_index].sample()
         return self.get_state()
-
+    
+    def sample_state(self) -> list:
+        state = []
+        for idx in range(self.length):
+            state.append(self.dimension_box[idx].sample())
+        return state
+            
     def set_one_dimension(self, dimension_index, sample_index) -> dict:
         assert dimension_index >= 0 and dimension_index <= self.length - 1
         self.dimension_box[dimension_index].set(sample_index)
@@ -219,10 +225,13 @@ class design_space:
 
     def get_obs(self):
         """the actual value of current state"""
-        obs_list = list()
+        obs = list()
         for item in self.dimension_box:
-            obs_list.append(item.get_norm_current_value())
-        obs = np.array(obs_list)
+            # obs_list.append(item.get_norm_current_value())
+            if item.get_name() in ['core', 'sys_clock']:
+                obs.append(item.current_value)
+            else:
+                obs.append(2**(item.current_value))
         return obs
 
 
@@ -404,8 +413,8 @@ if __name__ == "__main__":
     space = create_space(conf_data)
     space.print_state()
     print(space.get_obs())
-    for i in range(space.get_length()):
-        print(space.dimension_box[i].get_sample_box())
+    # for i in range(space.get_length()):
+    #     print(space.dimension_box[i].get_sample_box())
     
     # dimension_index = 1
     # sample_range = int(2)
