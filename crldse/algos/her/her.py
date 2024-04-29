@@ -29,7 +29,7 @@ class HerRewardModel:
     ) -> None:
         self._cuda = cuda and torch.cuda.is_available()
         self._device = 'cuda' if self._cuda else 'cpu'
-        self._her_strategy = cfg.her_strategy
+        self._her_strategy = cfg['her_strategy']
         assert self._her_strategy in ['final', 'future', 'episode']
         # `her_replay_k` may not be used in episodic HER, so default set to 1.
         self._her_replay_k = cfg.get('her_replay_k', 1)
@@ -147,3 +147,21 @@ class HerRewardModel:
     @property
     def sample_per_episode(self) -> int:
         return self._sample_per_episode
+    
+if __name__ == '__main__':
+    cfg=dict(
+        her_strategy='future',
+        # her_replay_k=2,  # `her_replay_k` is not used in episodic HER
+        # Sample how many episodes in each train iteration.
+        episode_size=32,
+        # Generate how many samples from one episode.
+        sample_per_episode=4,
+    )
+    epochs_list = [{'obs':1, 'reward':2, 'next_obs':3}, {'obs':1, 'reward':2, 'next_obs':3}, 
+                   {'obs':1, 'reward':2, 'next_obs':3}, {'obs':1, 'reward':2, 'next_obs':3},
+                   {'obs':1, 'reward':2, 'next_obs':3}, {'obs':1, 'reward':2, 'next_obs':3},
+                   {'obs':1, 'reward':2, 'next_obs':3}, {'obs':1, 'reward':2, 'next_obs':3},
+                   {'obs':1, 'reward':2, 'next_obs':3}, {'obs':1, 'reward':2, 'next_obs':3}]
+    her = HerRewardModel(cfg)
+    res = her.estimate(episode=epochs_list)
+    print(res)
