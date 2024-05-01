@@ -1,11 +1,11 @@
 import torch
 
 class mlp_qfunction(torch.nn.Module):
-    def __init__(self, space_lenth):
+    def __init__(self, space_length):
         super(mlp_qfunction, self).__init__()
-        self.space_lenth = space_lenth
+        self.space_length = space_length
         self.fc = torch.nn.Linear(256, 128)
-        self.fc1 = torch.nn.Linear(self.space_lenth + 1, 256)
+        self.fc1 = torch.nn.Linear(self.space_length + 1, 256)
         self.fc2 = torch.nn.Linear(128, 64)
         self.fc3 = torch.nn.Linear(64, 1)
 
@@ -17,11 +17,11 @@ class mlp_qfunction(torch.nn.Module):
 
 
 class mlp_policyfunction(torch.nn.Module):
-    def __init__(self, space_lenth, action_scale_list):
+    def __init__(self, space_length, action_scale_list):
         super(mlp_policyfunction, self).__init__()
-        self.space_lenth = space_lenth
+        self.space_length = space_length
         self.action_scale_list = action_scale_list
-        self.fc1 = torch.nn.Linear(self.space_lenth + 1, 128)
+        self.fc1 = torch.nn.Linear(self.space_length, 128)
         self.fc2 = torch.nn.Linear(128, 64)
         ###################################
         # layer fc3 is a multi-output mlp #
@@ -44,10 +44,10 @@ class mlp_policyfunction(torch.nn.Module):
 
 
 class mlp_fillter(torch.nn.Module):
-    def __init__(self, space_lenth):
+    def __init__(self, space_length):
         super(mlp_fillter, self).__init__()
-        self.space_lenth = space_lenth
-        self.fc1 = torch.nn.Linear(self.space_lenth, 256)
+        self.space_length = space_length
+        self.fc1 = torch.nn.Linear(self.space_length, 256)
         self.bn1 = torch.nn.BatchNorm1d(256)
         self.fc2 = torch.nn.Linear(256, 128)
         self.bn2 = torch.nn.BatchNorm1d(128)
@@ -71,14 +71,14 @@ class mlp_fillter(torch.nn.Module):
 
 
 class DDPG_mlp_qfunction(torch.nn.Module):
-    def __init__(self, space_lenth, action_scale_list):
+    def __init__(self, space_length, action_scale_list):
         super(DDPG_mlp_qfunction, self).__init__()
-        self.space_lenth = space_lenth
+        self.space_length = space_length
         self.action_scale_list = action_scale_list
 
         self.fc1 = list()
         for action_scale in self.action_scale_list:
-            self.fc1.append(torch.nn.Linear(self.space_lenth + action_scale + 1, 256))
+            self.fc1.append(torch.nn.Linear(self.space_length + action_scale + 1, 256))
         self.fc1 = torch.nn.ModuleList(self.fc1)
         self.fc2 = torch.nn.Linear(256, 128)
         self.fc3 = torch.nn.Linear(128, 1)
@@ -95,12 +95,12 @@ class DDPG_mlp_qfunction(torch.nn.Module):
 
 
 class DDPG_mlp_policyfunction(torch.nn.Module):
-    def __init__(self, space_lenth, action_scale_list):
+    def __init__(self, space_length, action_scale_list):
         super(DDPG_mlp_policyfunction, self).__init__()
-        self.space_lenth = space_lenth
+        self.space_length = space_length
         self.action_scale_list = action_scale_list
 
-        self.fc1 = torch.nn.Linear(self.space_lenth + 1, 128)
+        self.fc1 = torch.nn.Linear(self.space_length + 1, 128)
         self.fc2 = torch.nn.Linear(128, 64)
         # layer fc3 is a multi-output mlp
         self.fc3 = list()
@@ -122,5 +122,5 @@ class DDPG_mlp_policyfunction(torch.nn.Module):
 
 
 if __name__ == '__main__':
-    policy_net = mlp_policyfunction(8,[2,3,4,5,6])
+    policy_net = mlp_policyfunction(7,[2,3,4,5,6])
     print(policy_net)

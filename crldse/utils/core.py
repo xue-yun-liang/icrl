@@ -8,22 +8,35 @@ def combined_shape(length, shape=None):
         return (length,)
     return (length, shape) if np.isscalar(shape) else (length, *shape)
 
+
 def read_config(filename):
     with open(filename, "r") as f:
         return yaml.safe_load(f)
     
+
 def state_normalize(state, design_space):
-	state_copy = dict()
-	for item in design_space.dimension_box:
-		name = item.get_name()
-		state_copy[name] = state[name] / item.get_range_upbound()
-	return state_copy
+    """
+    normalize current state, state_val / upbound
+    
+    Parameters:
+		state: dict
+		design_space: design_space
+	Return:
+		state: dict
+    """
+    state_copy = dict()
+    for item in design_space.dimension_box:
+        name = item.get_name()
+        state_copy[name] = state[name] / item.get_range_upbound()
+    return state_copy
+
 
 def action_value_normalize(action_list, design_space):
 	action_list_copy = list()
 	for index, item in enumerate(design_space.dimension_box):
 		action_list_copy.append(action_list[index] / len(item.sample_box))
 	return action_list_copy
+
 
 def compute_action_distance(action_list_a, action_list_b, design_space):
 	action_list_a_normalized = action_value_normalize(action_list_a, design_space)
@@ -33,20 +46,16 @@ def compute_action_distance(action_list_a, action_list_b, design_space):
 		distance = distance + (i-j)**2
 	return distance
 
+
 def action_normalize(action_tensor, design_space, step):
 	action_tensor = action_tensor / (design_space.get_dimension_scale(step)-1)
 
-def state_to_list(state):
-	_list = []
-	for index in state:
-		_list.append(state[index])
-	return _list
 
 def state_to_torch_tensor(state):
-	_list = state_to_list(state)
-	_ndarray = np.array(_list)
+	_ndarray = np.array(list(state.values()))
 	_tensor = torch.from_numpy(_ndarray)
 	return _tensor
+
 
 def state_to_Variable(state):
 	"""
@@ -58,10 +67,12 @@ def state_to_Variable(state):
 	_Variable = torch.autograd.Variable(_tensor).float()
 	return _Variable	
 
+
 def index_to_one_hot(scale, action_index):
 	_tensor = torch.zeros(scale)
 	_tensor.scatter_(dim = 0, index = action_index, value = 1)
 	return _tensor
+
 
 def log_density(x, mu, std, logstd):
     var = std.pow(2)
@@ -69,14 +80,20 @@ def log_density(x, mu, std, logstd):
                   - 0.5 * math.log(2 * math.pi) - logstd
     return log_density.sum(1, keepdim=True)
 
-def get_action(mu, std):
+
+def get_an_random_action(mu, std):
+    """
+    give a pair parameters for guassian distribution, return a action value
+    """
     action = torch.normal(mu, std)
     action = action.data.numpy()
     return action
 
+
 def normal_density(x, mean, sigma):
 	return 1/((2 * 3.1415)**0.5 * sigma) \
 		   * math.exp(- (x - mean)**2/(2 * sigma**2))
+
 
 def get_normal_tensor(design_space, action_index, dimension_index, model_sigma):
 	sample_box = design_space.get_dimension_sample_box(dimension_index)
@@ -86,6 +103,7 @@ def get_normal_tensor(design_space, action_index, dimension_index, model_sigma):
 	normal_tensor = torch.from_numpy(np.array(normal_list))
 	normal_tensor = normal_tensor / normal_tensor.sum()
 	return normal_tensor
+
 
 def get_log_prob(policyfunction, design_space, state, action_index, dimension_index):
 	state_normalization = state_normalize(state, design_space)
@@ -98,8 +116,8 @@ def get_log_prob(policyfunction, design_space, state, action_index, dimension_in
 	prob_sampled = (probs * action_index_tensor).sum()
 	log_prob_sampled = prob_sampled.log()
 
-
 	return entropy, log_prob_sampled
+
 
 def get_kldivloss_and_log_prob(policyfunction, design_space, state, action_index, dimension_index):
 	state_normalization = state_normalize(state, design_space)
@@ -120,8 +138,8 @@ def get_kldivloss_and_log_prob(policyfunction, design_space, state, action_index
 	prob_sampled = (probs * action_index_tensor).sum()
 	log_prob_sampled = prob_sampled.log()
 
-
 	return entropy, kldivloss, log_prob_sampled
+
 
 def sample_index_from_2d_array(array):
     sampled_indices = []
@@ -131,3 +149,7 @@ def sample_index_from_2d_array(array):
         sampled_index = torch.multinomial(probabilities, 1).item()  # 使用multinomial进行抽样
         sampled_indices.append(sampled_index)
     return sampled_indices
+
+
+if __name__ == '__main__':
+    state_case = {"core":1, "sys_clock":2.3}
