@@ -1,7 +1,6 @@
 import numpy as np
 import geatpy as ea
-from crldse.evaluation import evaluation_function
-from crldse.constraints import my_test_config
+from dse_env.gym_wapper.envs.eval import evaluation_function
 import random
 from crldse.gem5_mcpat_evaluation import evaluation
 from matplotlib import pyplot as plt
@@ -87,7 +86,7 @@ class DSE(ea.Problem):
 
         bar = "====================="
         for index in range(NIND):
-            logger.info(bar, str(my_period + 1), bar)
+            print(bar, str(my_period + 1), bar)
             my_period = my_period + 1
             status = dict()
             status["core"] = int(vec_core[index])
@@ -142,7 +141,7 @@ class DSE(ea.Problem):
 
 
 def run(iindex):
-    logger.info(f"%%%%%%%%%%%%%%%TEST{iindex} START%%%%%%%%%%%%%")
+    print(f"%%%%%%%%%%%%%%%TEST{iindex} START%%%%%%%%%%%%%")
     global my_period, best_runtime_now, best_power_now, power_list, runtime_list
 
     seed = iindex * 10000
@@ -163,19 +162,19 @@ def run(iindex):
     # myalgorithm.recOper.XOVR = 0.7
     myalgorithm.drawing = 1
 
-    logger.info("________________algorithm run_________________")
+    print("________________algorithm run_________________")
     referenceObjV = np.array([50])
     NDSet = myalgorithm.run()
-    logger.info(NDSet)
-    logger.info(NDSet.ObjV)
+    print(NDSet)
+    print(NDSet.ObjV)
 
     objectvalue1 = list()
     objectvalue2 = list()
     for item in NDSet.ObjV:
         objectvalue1.append(item[0])
         objectvalue2.append(item[1])
-    logger.info(objectvalue1)
-    logger.info(objectvalue2)
+    print(objectvalue1)
+    print(objectvalue2)
     # plt.figure(figsize=(9, 6))
     # plt.xlabel('latency')
     # plt.ylabel('power')
@@ -184,8 +183,8 @@ def run(iindex):
 
     # population.save()
 
-    # logger.info("obj_trace", obj_trace[:, 1])
-    # logger.info("var_trace", var_trace)
+    # print("obj_trace", obj_trace[:, 1])
+    # print("var_trace", var_trace)
 
     workbook = xlwt.Workbook(encoding="ascii")
     worksheet = workbook.add_sheet("1")
@@ -200,7 +199,7 @@ def run(iindex):
     name = "record/runtime/" + "_" + "NSGA" + "_" + str(iindex) + ".xls"
     workbook.save(name)
 
-    logger.info(f"**************TEST{iindex} END***********")
+    print(f"**************TEST{iindex} END***********")
 
     workbook = xlwt.Workbook(encoding="ascii")
     worksheet = workbook.add_sheet("1")
@@ -214,7 +213,7 @@ def run(iindex):
     name = "record/runtime/" + "_" + "NSGA" + "_" + str(iindex) + "allvalue" + ".xls"
     workbook.save(name)
 
-    # logger.info(f"**************TEST{iindex} END***********")
+    # print(f"**************TEST{iindex} END***********")
 
     # workbook = xlwt.Workbook(encoding = 'ascii')
     # worksheet = workbook.add_sheet("1")
@@ -226,7 +225,7 @@ def run(iindex):
     # name = "record/runtime/" + "_" + "NSGA" + "_" + str(iindex) +"power"+".xls"
     # workbook.save(name)
 
-    # logger.info(f"**************TEST{iindex} END***********")
+    # print(f"**************TEST{iindex} END***********")
 
 
 if __name__ == "__main__":
